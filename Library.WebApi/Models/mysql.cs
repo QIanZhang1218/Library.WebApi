@@ -66,10 +66,13 @@ namespace Library.WebApi.Models
 							BookCurrentAmount = dataReader.GetInt32("book_current_amount"),
 							BookBorrowTimes = dataReader.GetInt32("book_borrow_times"),
 							BookRemark = dataReader.IsDBNull("book_remark") ? null : dataReader.GetString("book_remark"),
-							BookPublishing = dataReader.GetString("book_publishing"),
+							BookPublishInfo = dataReader.GetString("publication_info"),
+							BookPublishDate = dataReader.GetString("publication_date"),
 							BookLanguage = dataReader.GetString("book_language"),
 							BookLocation = dataReader.GetString("book_location"),
-							BookImg = dataReader.GetString("book_img")
+							BookImg = dataReader.GetString("book_img"),
+							BookContent = dataReader.IsDBNull("book_content") ? null : dataReader.GetString("book_content"),
+							BookSummary = dataReader.GetString("book_summary")
 						});
 					}
 				}
@@ -126,6 +129,54 @@ namespace Library.WebApi.Models
 			}
 			return signInInfo;
 		}
+		
+		
+		//Get  Borrow Records
+		public List<ReserveBooks> ExecuteGetBorrowRecords(string str)
+		{
+			MySqlConnection con = new MySqlConnection(constr);
+			MySqlDataReader dataReader = null;
+			//return value
+			List<ReserveBooks> borrowRecords = null;
+			try
+			{
+				con.Open();
+				string sql = str;
+				MySqlCommand command = new MySqlCommand(sql, con);
+				dataReader = command.ExecuteReader();
+				if (dataReader != null && dataReader.HasRows)
+				{
+					borrowRecords = new List<ReserveBooks>();
+					while (dataReader.Read())
+					{
+						Console.WriteLine("@@@");
+						borrowRecords.Add(new ReserveBooks()
+						{
+							RecordId = dataReader.GetInt32("record_id"),
+							BookId = dataReader.GetInt32("book_id"),
+							UserId = dataReader.GetInt32("reader_id"),
+							BookName = dataReader.GetString("book_name"),
+							BorrowDate =  dataReader.GetDateTime("borrow_date"),
+							ReturnDate = dataReader.GetDateTime("return_date"),
+							Penalty = dataReader.GetDecimal("penalty"),
+							Status = dataReader.GetBoolean("isReturn")
+						});
+					}
+				}
 
+				dataReader.Close();
+			}
+			catch (Exception e)
+			{
+				Console.WriteLine(e.Message);
+			}
+			finally
+			{
+				con.Close();
+			}
+			return borrowRecords;
+		}
+		
+		
     }
 }

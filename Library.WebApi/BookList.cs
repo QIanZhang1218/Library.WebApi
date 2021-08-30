@@ -14,9 +14,12 @@ namespace Library.WebApi
         public int BookCurrentAmount { get; set; }
         public int BookBorrowTimes { get; set; }
         public string BookRemark { get; set; }
-        public string BookPublishing { get; set; }
+        public string BookPublishInfo { get; set; }
+        public string BookPublishDate { get; set; }
         public string BookLanguage { get; set; }
         public string BookLocation { get; set; }
         public string BookImg { get; set; }
+        public string BookContent { get; set; }
+        public string BookSummary { get; set; }
     }
 }
