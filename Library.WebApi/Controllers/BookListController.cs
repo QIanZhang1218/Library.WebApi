@@ -4,6 +4,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using Library.WebApi.Models;
+using Org.BouncyCastle.Crypto.Digests;
+using Org.BouncyCastle.Utilities;
 using WebApplication;
 
 namespace Library.WebApi.Controllers
@@ -100,7 +102,6 @@ namespace Library.WebApi.Controllers
         {
             Mysql database = new Mysql();
             var res = database.ExecuteGetBorrowRecords("SELECT * FROM library_schema.borrow_list WHERE reader_id = 1;");
-
             return Enumerable.Range(1, res.Count).Select(index => new ReserveBooks()
             {
                 RecordId = res[index-1].RecordId,
@@ -111,9 +112,31 @@ namespace Library.WebApi.Controllers
                 ReturnDate = res[index-1].ReturnDate,
                 Penalty = res[index-1].Penalty,
                 Status = res[index-1].Status
-
+        
             }).ToArray();
         }
-        
+
+        //Extend borrow time period (7 days a time)
+        [HttpPost]
+        public object ExtendBorrowTime([FromBody] ReserveBooks para)
+        {
+            Console.WriteLine(para.ReturnDate);
+            Mysql database = new Mysql();
+            try
+            {
+                database.ExecuteNonQuery(
+                        $" UPDATE `library_schema`.`borrow_list` SET `return_date` = date_add(return_date,interval 1 week) WHERE (`record_id` = {para.RecordId});");
+                    return new Response
+                        { Status = "Success", Message = "Record SuccessFully Saved.",Token="fake-jwt-token" };
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                return new Response
+                    { Status = "Error", Message = "Invalid Data." };
+            }
+            
+        }
+
     }
 }

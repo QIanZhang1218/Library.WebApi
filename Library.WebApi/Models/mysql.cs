@@ -79,7 +79,7 @@ namespace Library.WebApi.Models
 
 				dataReader.Close();
 			}
-			catch (Exception e)
+			catch (Exception e)	
 			{
 				Console.WriteLine(e.Message);
 			}
@@ -149,7 +149,18 @@ namespace Library.WebApi.Models
 					borrowRecords = new List<ReserveBooks>();
 					while (dataReader.Read())
 					{
-						Console.WriteLine("@@@");
+						DateTime currentTime = Convert.ToDateTime(DateTime.Now.ToLongDateString().ToString());
+						DateTime returnTime = dataReader.GetDateTime("return_date");
+						int result = DateTime.Compare(currentTime, returnTime);
+						if (result == 1)
+						{
+						    int delay = Convert.ToInt32(currentTime .Subtract(returnTime).Days.ToString());
+						    //Penalty: $5 each day
+						    decimal penalty = delay * 5;
+						    ExecuteNonQuery(
+						        $"UPDATE `library_schema`.`borrow_list` SET `penalty` = {penalty} WHERE (`record_id` = {dataReader.GetInt32("record_id")})");
+						    
+						}
 						borrowRecords.Add(new ReserveBooks()
 						{
 							RecordId = dataReader.GetInt32("record_id"),
@@ -176,7 +187,6 @@ namespace Library.WebApi.Models
 			}
 			return borrowRecords;
 		}
-		
 		
     }
 }
