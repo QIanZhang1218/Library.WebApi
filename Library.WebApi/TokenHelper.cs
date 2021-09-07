@@ -12,7 +12,7 @@ namespace Library.WebApi
         public static string SecretKey = "bfdgfdabgifhgfnbibiutbfajbvufafg";//这个服务端加密秘钥 属于私钥
         // public static JsonSerializer myJson = new JsonSerializer();
         
-        public static string GenToken(SignIn M)
+        public static string GenToken(UserInfo M)
         {
             var payload = new Dictionary<string, dynamic>
             {
@@ -26,12 +26,12 @@ namespace Library.WebApi
             return encoder.Encode(payload, SecretKey);
         }
     
-        public static SignIn DecodeToken(string token)
+        public static UserInfo DecodeToken(string token)
         {
             try
             {
                 var json = GetTokenJson(token);
-                SignIn info = JsonSerializer.Deserialize<SignIn>(json);
+                UserInfo info = JsonSerializer.Deserialize<UserInfo>(json);
                 return info;
             }
             catch (Exception)

@@ -2,11 +2,13 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using JWT;
 using Microsoft.AspNetCore.Mvc;
 using Library.WebApi.Models;
 using Org.BouncyCastle.Crypto.Digests;
 using Org.BouncyCastle.Utilities;
-using WebApplication;
+using JWT.MvcDemo.Models;
+using JWT.Serializers;
 
 namespace Library.WebApi.Controllers
 {
@@ -75,45 +77,72 @@ namespace Library.WebApi.Controllers
         [HttpPost]
         public object ReserveBooks([FromBody] ReserveBooks para)
         {
-            Console.WriteLine(para);
+            // Console.WriteLine(para);
+            IJsonSerializer serializer = new JsonNetSerializer();
+            IDateTimeProvider provider = new UtcDateTimeProvider();
+            IJwtValidator validator = new JwtValidator(serializer, provider);
+            IBase64UrlEncoder urlEncoder = new JwtBase64UrlEncoder();
+            // IJwtDecoder decoder = new JwtDecoder(serializer, validator, urlEncoder);
+            string userToken = this.Request.Headers["Cookie"];//Header中的token
             Mysql database = new Mysql();
             try
             {
-                var res = database.ExecuteGetBooksList($"SELECT * FROM library_schema.books WHERE (`book_id` = {para.BookId});");
-                database.ExecuteNonQuery(
-                    $"INSERT INTO `library_schema`.`borrow_list` (`reader_id`, `book_id`, `book_name`, `borrow_date`, `return_date`,`penalty`) VALUES ('{para.UserId}', '{para.BookId}','{res[0].BookName}', '{para.BorrowDate.ToString("yyyy-MM-dd HH:mm:ss")}','{para.BorrowDate.AddDays(7).ToString("yyyyMMddHHmmss")}','{para.Penalty}')");
-                database.ExecuteNonQuery(
-                    $" UPDATE `library_schema`.`books` SET `book_current_amount` = book_current_amount-1 WHERE (`book_id` = {para.BookId});");
-                return new Response
-                    { Status = "Success", Message = "Record SuccessFully Saved.",Token="fake-jwt-token" };
+                var isSignin = database.ExecuteGetBooksList($"SELECT * FROM library_schema.reader WHERE (`token` = '{userToken}');");
+                if (isSignin != null)
+                {
+                    var res = database.ExecuteGetBooksList($"SELECT * FROM library_schema.books WHERE (`book_id` = {para.BookId});");
+                    database.ExecuteNonQuery(
+                        $"INSERT INTO `library_schema`.`borrow_list` (`reader_id`, `book_id`, `book_name`, `borrow_date`, `return_date`,`penalty`) VALUES ('{para.UserId}', '{para.BookId}','{res[0].BookName}', '{para.BorrowDate.ToString("yyyy-MM-dd HH:mm:ss")}','{para.BorrowDate.AddDays(7).ToString("yyyyMMddHHmmss")}','{para.Penalty}')");
+                    database.ExecuteNonQuery(
+                        $" UPDATE `library_schema`.`books` SET `book_current_amount` = book_current_amount-1 WHERE (`book_id` = {para.BookId});");
+                    return new StatusResponse
+                        { Success = true, Message = "Record SuccessFully Saved."};
+                }
+                else
+                {
+                    return new StatusResponse
+                        { Success = false, Message = "Have not sign in."};
+                }
+               
             }
             catch (Exception e)
             {
                 Console.WriteLine(e);
-               return new Response
-                    { Status = "Error", Message = "Invalid Data." };
+               return new StatusResponse
+                    { Success = false, Message = "Invalid Data." };
             }
            
         }
         
         //get borrow records
         [HttpGet]
-        public IEnumerable<ReserveBooks> GetBorrowRecords()
+        public StatusResponse GetBorrowRecords()
         {
+            IJsonSerializer serializer = new JsonNetSerializer();
+            IDateTimeProvider provider = new UtcDateTimeProvider();
+            IJwtValidator validator = new JwtValidator(serializer, provider);
+            IBase64UrlEncoder urlEncoder = new JwtBase64UrlEncoder();
+            // IJwtDecoder decoder = new JwtDecoder(serializer, validator, urlEncoder);
+            string userToken = this.Request.Headers["Cookie"];//Header中的token
             Mysql database = new Mysql();
             var res = database.ExecuteGetBorrowRecords("SELECT * FROM library_schema.borrow_list WHERE reader_id = 1;");
-            return Enumerable.Range(1, res.Count).Select(index => new ReserveBooks()
+            var isSignin = database.ExecuteGetBooksList($"SELECT * FROM library_schema.reader WHERE (`token` = '{userToken}');");
+            if (isSignin != null)
             {
-                RecordId = res[index-1].RecordId,
-                BookId = res[index-1].BookId,
-                BookName = res[index-1].BookName,
-                UserId = res[index-1].UserId,
-                BorrowDate = res[index-1].BorrowDate,
-                ReturnDate = res[index-1].ReturnDate,
-                Penalty = res[index-1].Penalty,
-                Status = res[index-1].Status
-        
-            }).ToArray();
+
+                return new StatusResponse
+                {
+                    Success = true,
+                    Message = "",
+                    BookList = res,
+                };
+            }
+            else
+            {
+                return new StatusResponse
+                    { Success = false, Message = "Have not sign in."};
+            }
+
         }
 
         //Extend borrow time period (7 days a time)
@@ -126,14 +155,14 @@ namespace Library.WebApi.Controllers
             {
                 database.ExecuteNonQuery(
                         $" UPDATE `library_schema`.`borrow_list` SET `return_date` = date_add(return_date,interval 1 week) WHERE (`record_id` = {para.RecordId});");
-                    return new Response
-                        { Status = "Success", Message = "Record SuccessFully Saved.",Token="fake-jwt-token" };
+                    return new StatusResponse
+                        { Success = true, Message = "Record SuccessFully Saved.",Token="fake-jwt-token" };
             }
             catch (Exception e)
             {
                 Console.WriteLine(e);
-                return new Response
-                    { Status = "Error", Message = "Invalid Data." };
+                return new StatusResponse
+                    { Success = false, Message = "Invalid Data." };
             }
             
         }

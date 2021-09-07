@@ -1,9 +1,11 @@
 using System;
 using System.Collections.Generic;
 using System.Data;
+using JWT.MvcDemo.Models;
 using Library.WebApi;
 using Library.WebApi.Controllers;
 using MySql.Data.MySqlClient;
+using Ubiety.Dns.Core;
 using WebApplication;
 
 namespace Library.WebApi.Models
@@ -53,7 +55,7 @@ namespace Library.WebApi.Models
 					booksInfo = new List<Books>();
 					while (dataReader.Read())
 					{
-						Console.WriteLine("@@@");
+						// Console.WriteLine("@@@");
 						booksInfo.Add(new Books()
 						{
 							BookId = dataReader.GetInt32("book_id"),
@@ -91,12 +93,14 @@ namespace Library.WebApi.Models
 		}
 		
 		//SignUp
-		public List<SignIn> VerifyReader(string str)
+		public List<UserInfo> VerifyReader(string str)
 		{
+			bool status = false;
 			MySqlConnection con = new MySqlConnection(constr);
 			MySqlDataReader dataReader = null;
+			StatusResponse result = new StatusResponse();
 			//return value
-			List<SignIn> signInInfo = null;
+			List<UserInfo> signInInfo = null;
 			try
 			{
 				con.Open();
@@ -105,15 +109,26 @@ namespace Library.WebApi.Models
 				dataReader = command.ExecuteReader();
 				if (dataReader != null && dataReader.HasRows)
 				{
-					signInInfo = new List<SignIn>();
+					status = true;
+					signInInfo = new List<UserInfo>();
 					while (dataReader.Read())
 					{
-						Console.WriteLine("@@@");
-						signInInfo.Add(new SignIn()
+						// Console.WriteLine("@@@");
+						signInInfo.Add(new UserInfo()
 						{
 							Email =  dataReader.GetString("reader_email"),
-							Password = dataReader.GetString("reader_pwd")
+							Password = dataReader.GetString("reader_pwd"),
+							// UserId  = dataReader.GetInt32("reader_id")
 						});
+						var payload = new Dictionary<string, object>
+						{
+							{ "email",signInInfo[0].Email + DateTime.Now},
+							{ "pwd", signInInfo[0].Password }
+						};
+						result.Token = JwtHelp.SetJwtEncode(payload);
+						result.Success = true;
+						result.Message = "成功";
+						signInInfo[0].Token = result.Token;
 					}
 				}
 
@@ -149,14 +164,17 @@ namespace Library.WebApi.Models
 					borrowRecords = new List<ReserveBooks>();
 					while (dataReader.Read())
 					{
+						//get return status 
+						bool isReturn = dataReader.GetBoolean("isReturn");
+						bool isPaid = dataReader.GetBoolean("isPaid");
 						DateTime currentTime = Convert.ToDateTime(DateTime.Now.ToLongDateString().ToString());
 						DateTime returnTime = dataReader.GetDateTime("return_date");
 						int result = DateTime.Compare(currentTime, returnTime);
-						if (result == 1)
+						if (isReturn == false && result == 1 && isPaid == false)
 						{
 						    int delay = Convert.ToInt32(currentTime .Subtract(returnTime).Days.ToString());
 						    //Penalty: $5 each day
-						    decimal penalty = delay * 5;
+						    decimal penalty =5+ delay * 5;
 						    ExecuteNonQuery(
 						        $"UPDATE `library_schema`.`borrow_list` SET `penalty` = {penalty} WHERE (`record_id` = {dataReader.GetInt32("record_id")})");
 						    
@@ -170,7 +188,8 @@ namespace Library.WebApi.Models
 							BorrowDate =  dataReader.GetDateTime("borrow_date"),
 							ReturnDate = dataReader.GetDateTime("return_date"),
 							Penalty = dataReader.GetDecimal("penalty"),
-							Status = dataReader.GetBoolean("isReturn")
+							Status = dataReader.GetBoolean("isReturn"),
+							PenaltyStatus = dataReader.GetBoolean("isPaid")
 						});
 					}
 				}
