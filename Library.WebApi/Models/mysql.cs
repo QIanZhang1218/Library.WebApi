@@ -174,7 +174,7 @@ namespace Library.WebApi.Models
 						{
 						    int delay = Convert.ToInt32(currentTime .Subtract(returnTime).Days.ToString());
 						    //Penalty: $5 each day
-						    decimal penalty =5+ delay * 5;
+						    decimal penalty =delay * 5;
 						    ExecuteNonQuery(
 						        $"UPDATE `library_schema`.`borrow_list` SET `penalty` = {penalty} WHERE (`record_id` = {dataReader.GetInt32("record_id")})");
 						    
