@@ -22,5 +22,7 @@ namespace Library.WebApi
         //0:not ruturn 1: return
         public Boolean Status { get; set; }
         public Boolean PenaltyStatus { get; set; }
+        public Boolean PickUpStatus { get; set; }
+        public Boolean OverdueStatus { get; set; }
     }
 }

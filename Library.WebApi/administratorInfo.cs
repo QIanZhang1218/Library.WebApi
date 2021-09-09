@@ -11,4 +11,12 @@ namespace WebApplication
         public string Pwd { get; set; }
         public string Token { get; set; }
     }
+
+    public class AdminSignUp
+    {
+        public string Name { get; set; }
+        public string Email { get; set; }
+        public string Pwd { get; set; }
+        public string Gender { get; set; }
+    }
 }

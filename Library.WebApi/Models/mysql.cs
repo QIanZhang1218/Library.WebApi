@@ -92,7 +92,7 @@ namespace Library.WebApi.Models
 			return booksInfo;
 		}
 		
-		//SignUp
+		//User SignIn
 		public List<UserInfo> VerifyReader(string str)
 		{
 			bool status = false;
@@ -120,6 +120,7 @@ namespace Library.WebApi.Models
 							Password = dataReader.GetString("reader_pwd"),
 							// UserId  = dataReader.GetInt32("reader_id")
 						});
+						//Token
 						var payload = new Dictionary<string, object>
 						{
 							{ "email",signInInfo[0].Email + DateTime.Now},
@@ -145,7 +146,6 @@ namespace Library.WebApi.Models
 			return signInInfo;
 		}
 		
-		
 		//Get  Borrow Records
 		public List<ReserveBooks> ExecuteGetBorrowRecords(string str)
 		{
@@ -161,23 +161,28 @@ namespace Library.WebApi.Models
 				dataReader = command.ExecuteReader();
 				if (dataReader != null && dataReader.HasRows)
 				{
+					decimal penaltySum = 0;
+					int readerId = 0;
 					borrowRecords = new List<ReserveBooks>();
 					while (dataReader.Read())
 					{
 						//get return status 
 						bool isReturn = dataReader.GetBoolean("isReturn");
 						bool isPaid = dataReader.GetBoolean("isPaid");
+						bool isPickUp = dataReader.GetBoolean("isPickUp");
+						readerId = dataReader.GetInt32("reader_id");
 						DateTime currentTime = Convert.ToDateTime(DateTime.Now.ToLongDateString().ToString());
 						DateTime returnTime = dataReader.GetDateTime("return_date");
 						int result = DateTime.Compare(currentTime, returnTime);
-						if (isReturn == false && result == 1 && isPaid == false)
+						// readers who has pick up their reservation and overdue and the penalty is unpaid then will add penalty amount day by day.
+						if (isPickUp && isReturn == false && result==1 && isPaid == false)
 						{
 						    int delay = Convert.ToInt32(currentTime .Subtract(returnTime).Days.ToString());
 						    //Penalty: $5 each day
 						    decimal penalty =delay * 5;
+						    penaltySum += penalty;
 						    ExecuteNonQuery(
 						        $"UPDATE `library_schema`.`borrow_list` SET `penalty` = {penalty} WHERE (`record_id` = {dataReader.GetInt32("record_id")})");
-						    
 						}
 						borrowRecords.Add(new ReserveBooks()
 						{
@@ -189,9 +194,14 @@ namespace Library.WebApi.Models
 							ReturnDate = dataReader.GetDateTime("return_date"),
 							Penalty = dataReader.GetDecimal("penalty"),
 							Status = dataReader.GetBoolean("isReturn"),
-							PenaltyStatus = dataReader.GetBoolean("isPaid")
+							PickUpStatus = dataReader.GetBoolean("isPickUp"),
+							PenaltyStatus = dataReader.GetBoolean("isPaid"),
+							OverdueStatus = dataReader.GetBoolean("isOverdue")
 						});
 					}
+					Console.WriteLine("!"+penaltySum);
+					ExecuteNonQuery(
+						$"UPDATE `library_schema`.`reader` SET `reader_unpaid_penalty` = {penaltySum} WHERE (`reader_id` = {readerId})");
 				}
 
 				dataReader.Close();
@@ -207,5 +217,141 @@ namespace Library.WebApi.Models
 			return borrowRecords;
 		}
 		
+		//Administrator Login
+		public List<AdminLogIn> VerifyAdmin(string str)
+		{
+			MySqlConnection con = new MySqlConnection(constr);
+			MySqlDataReader dataReader = null;
+			StatusResponse result = new StatusResponse();
+			List<AdminLogIn> AdminLogin = new List<AdminLogIn>();
+			try
+			{
+				con.Open();
+				string sql = str;
+				MySqlCommand command = new MySqlCommand(sql, con);
+				dataReader = command.ExecuteReader();
+				if (dataReader != null && dataReader.HasRows)
+				{
+					AdminLogin = new List<AdminLogIn>();
+					while (dataReader.Read())
+					{
+						AdminLogin.Add(new AdminLogIn()
+							{
+								Email =  dataReader.GetString("admin_email"),
+								Pwd = dataReader.GetString("admin_pwd")
+							}
+						);
+						//Token
+						var payload = new Dictionary<string, object>
+						{
+							{ "email",AdminLogin[0].Email + DateTime.Now},
+							{ "pwd", AdminLogin[0].Pwd }
+						};
+						result.Token = JwtHelp.SetJwtEncode(payload);
+						result.Success = true;
+						result.Message = "成功";
+						AdminLogin[0].Token = result.Token;
+					}
+				}
+				dataReader.Close();
+			}
+			catch (Exception e)
+			{
+				Console.WriteLine(e.Message);
+			}
+			finally
+			{
+				con.Close();
+			}
+			return AdminLogin;
+		}
+		
+		//get reader info
+		public List<ManageReader> ExecuteGetUserInfo(string str)
+		{
+			MySqlConnection con = new MySqlConnection(constr);
+			MySqlDataReader dataReader = null;
+			//return value
+			List<ManageReader> readersInfo = null;
+			try
+			{
+				con.Open();
+				string sql = str;
+				MySqlCommand command = new MySqlCommand(sql, con);
+				dataReader = command.ExecuteReader();
+				if (dataReader != null && dataReader.HasRows)
+				{
+					readersInfo = new List<ManageReader>();
+					while (dataReader.Read())
+					{
+						readersInfo.Add(new ManageReader()
+						{
+							ReaderId = dataReader.GetInt32("reader_id"),
+							// ReaderName = dataReader.GetString("reader_name"),
+							// ReaderEmail = dataReader.GetString("reader_email"),
+							// ReaderUnpaid = dataReader.GetInt32("reader_unpaid_penalty"),
+							// ReaderOnhold = dataReader.GetInt32("reader_borrow_numbers"),
+							// ReaderRemark = dataReader.IsDBNull("reader_remark") ? null : dataReader.GetString("reader_remark"),
+							// Token = dataReader.IsDBNull("token") ? null : dataReader.GetString("token"),
+						});
+					}
+				}
+
+				dataReader.Close();
+			}
+			catch (Exception e)	
+			{
+				Console.WriteLine(e.Message);
+			}
+			finally
+			{
+				con.Close();
+			}
+			return readersInfo;
+		}
+		
+		public List<ReserveBooks> GetBorrowListInfo(string str) {
+			MySqlConnection con = new MySqlConnection(constr);
+			MySqlDataReader dataReader = null;
+			//return value
+			List<ReserveBooks> borrowListInfo = null;
+			try
+			{
+				con.Open();
+				string sql = str;
+				MySqlCommand command = new MySqlCommand(sql, con);
+				dataReader = command.ExecuteReader();
+				if (dataReader != null && dataReader.HasRows)
+				{
+					borrowListInfo = new List<ReserveBooks>();
+					while (dataReader.Read())
+					{
+						borrowListInfo.Add(new ReserveBooks()
+						{
+							UserId = dataReader.GetInt32("reader_id"),
+							OverdueStatus = dataReader.GetBoolean("isOverdue")
+							// ReaderName = dataReader.GetString("reader_name"),
+							// ReaderEmail = dataReader.GetString("reader_email"),
+							// ReaderUnpaid = dataReader.GetInt32("reader_unpaid_penalty"),
+							// ReaderOnhold = dataReader.GetInt32("reader_borrow_numbers"),
+							// ReaderRemark = dataReader.IsDBNull("reader_remark") ? null : dataReader.GetString("reader_remark"),
+							// Token = dataReader.IsDBNull("token") ? null : dataReader.GetString("token"),
+						});
+					}
+				}
+
+				dataReader.Close();
+			}
+			catch (Exception e)	
+			{
+				Console.WriteLine(e.Message);
+			}
+			finally
+			{
+				con.Close();
+			}
+			return borrowListInfo;
+		}
+		}
     }
-}
+

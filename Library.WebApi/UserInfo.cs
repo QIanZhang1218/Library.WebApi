@@ -21,4 +21,15 @@ namespace Library.WebApi
     {
         public bool SignIn { get; set; }
     }
+
+    public class ManageReader
+    {
+        public int ReaderId { get; set; }
+        public string ReaderName { get; set; }
+        public string ReaderEmail { get; set; }
+        public decimal ReaderUnpaid { get; set; }
+        public int ReaderOnhold { get; set; }
+        public string ReaderRemark { get; set; }
+        public string Token { get; set; }
+    }
 }

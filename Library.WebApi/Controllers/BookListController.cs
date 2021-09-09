@@ -1,6 +1,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Data.SqlTypes;
 using System.Linq;
 using JWT;
 using Microsoft.AspNetCore.Mvc;
@@ -50,8 +51,8 @@ namespace Library.WebApi.Controllers
         {
             Mysql database = new Mysql();
             var res = database.ExecuteGetBooksList($"SELECT * FROM library_schema.books WHERE book_id = {bookId}");
-            string[] column = new string[] { "bookId"};
-            int[] columnvalue = new int[1] { bookId };
+            // string[] column = new string[] { "bookId"};
+            // int[] columnvalue = new int[1] { bookId };
             return Enumerable.Range(1, res.Count).Select(index => new Books()
             {
                 BookId = res[index-1].BookId,
@@ -77,26 +78,40 @@ namespace Library.WebApi.Controllers
         [HttpPost]
         public object ReserveBooks([FromBody] ReserveBooks para)
         {
-            // Console.WriteLine(para);
-            IJsonSerializer serializer = new JsonNetSerializer();
-            IDateTimeProvider provider = new UtcDateTimeProvider();
-            IJwtValidator validator = new JwtValidator(serializer, provider);
-            IBase64UrlEncoder urlEncoder = new JwtBase64UrlEncoder();
-            // IJwtDecoder decoder = new JwtDecoder(serializer, validator, urlEncoder);
-            string userToken = this.Request.Headers["Cookie"];//Header中的token
+            string userToken = Request.Cookies["token"];
             Mysql database = new Mysql();
             try
             {
+                // //update reader overdue status from borrow_list table
+                // database.ExecuteNonQuery(
+                //     $" Update library_schema.borrow_list SET isOverdue = true WHERE (return_date < Date(now()) AND isReturn = false And isPickup = 1);");
+                var reader = database.ExecuteGetUserInfo($"SELECT reader_id FROM library_schema.reader WHERE (`token` = '{userToken}');");
+                int readerId = reader[0].ReaderId;
+                var recordList = database.GetBorrowListInfo($"SELECT * FROM library_schema.borrow_list WHERE (`reader_id` = '{readerId}');");
+                Boolean isOverdue = false;
+                for (int i = 0; i < recordList.Count; i++)
+                {
+                    while (recordList[i].OverdueStatus == true)
+                    {
+                        isOverdue = true;
+                        break;
+                    }
+                }
+                
                 var isSignin = database.ExecuteGetBooksList($"SELECT * FROM library_schema.reader WHERE (`token` = '{userToken}');");
-                if (isSignin != null)
+                if (isSignin != null && isOverdue == false)
                 {
                     var res = database.ExecuteGetBooksList($"SELECT * FROM library_schema.books WHERE (`book_id` = {para.BookId});");
                     database.ExecuteNonQuery(
-                        $"INSERT INTO `library_schema`.`borrow_list` (`reader_id`, `book_id`, `book_name`, `borrow_date`, `return_date`,`penalty`) VALUES ('{para.UserId}', '{para.BookId}','{res[0].BookName}', '{para.BorrowDate.ToString("yyyy-MM-dd HH:mm:ss")}','{para.BorrowDate.AddDays(7).ToString("yyyyMMddHHmmss")}','{para.Penalty}')");
+                        $"INSERT INTO `library_schema`.`borrow_list` (`reader_id`, `book_id`, `book_name`, `borrow_date`, `return_date`,`penalty`) VALUES ('{readerId}', '{para.BookId}','{res[0].BookName}', '{para.BorrowDate.ToString("yyyy-MM-dd HH:mm:ss")}','{para.BorrowDate.AddDays(7).ToString("yyyyMMddHHmmss")}','{para.Penalty}')");
                     database.ExecuteNonQuery(
                         $" UPDATE `library_schema`.`books` SET `book_current_amount` = book_current_amount-1 WHERE (`book_id` = {para.BookId});");
                     return new StatusResponse
                         { Success = true, Message = "Record SuccessFully Saved."};
+                }else if(isSignin != null && isOverdue == true)
+                {
+                    return new StatusResponse
+                        { Success = false, Message = "You have overdue books or unpaid fines"};
                 }
                 else
                 {
@@ -118,30 +133,47 @@ namespace Library.WebApi.Controllers
         [HttpGet]
         public StatusResponse GetBorrowRecords()
         {
-            IJsonSerializer serializer = new JsonNetSerializer();
-            IDateTimeProvider provider = new UtcDateTimeProvider();
-            IJwtValidator validator = new JwtValidator(serializer, provider);
-            IBase64UrlEncoder urlEncoder = new JwtBase64UrlEncoder();
-            // IJwtDecoder decoder = new JwtDecoder(serializer, validator, urlEncoder);
-            string userToken = this.Request.Headers["Cookie"];//Header中的token
+            string userToken = Request.Cookies["token"];
             Mysql database = new Mysql();
-            var res = database.ExecuteGetBorrowRecords("SELECT * FROM library_schema.borrow_list WHERE reader_id = 1;");
+            var reader = database.ExecuteGetUserInfo($"SELECT reader_id FROM library_schema.reader WHERE (`token` = '{userToken}');");
+            var res = database.ExecuteGetBorrowRecords($"SELECT * FROM library_schema.borrow_list WHERE (`reader_id` = '{reader[0].ReaderId}');");
             var isSignin = database.ExecuteGetBooksList($"SELECT * FROM library_schema.reader WHERE (`token` = '{userToken}');");
-            if (isSignin != null)
+            if (res != null)
             {
-
-                return new StatusResponse
+                if (isSignin != null)
                 {
-                    Success = true,
-                    Message = "",
-                    BookList = res,
-                };
+
+                    return new StatusResponse
+                    {
+                        Success = true,
+                        Message = "",
+                        BookList = res,
+                    };
+                }
+                else
+                {
+                    return new StatusResponse
+                        { Success = false, Message = "Have not sign in."};
+                }
             }
             else
             {
-                return new StatusResponse
-                    { Success = false, Message = "Have not sign in."};
+                if (isSignin != null)
+                {
+
+                    return new StatusResponse
+                    {
+                        Success = true,
+                        Message = "No records",
+                    };
+                }
+                else
+                {
+                    return new StatusResponse
+                        { Success = false, Message = "Have not sign in."};
+                }
             }
+
 
         }
 

@@ -14,8 +14,13 @@ namespace Library.WebApi.Controllers
         [HttpPost]
         public Object VerifySignIn([FromBody] UserInfo para)
         {
-            
+            // string token = Request.Cookies["token"];
+            // Console.WriteLine("@"+token);
             Mysql database = new Mysql();
+            //update overdue status in borrow_list 
+            database.ExecuteNonQuery(
+                $" Update library_schema.borrow_list SET isOverdue = true WHERE (return_date < Date(now()) AND isReturn = false And isPickup = 1);");
+            
             var res = database.VerifyReader($"SELECT * FROM library_schema.reader WHERE reader_email='{para.Email}' AND reader_pwd='{para.Password}' ;");
             if (res == null)
             {
