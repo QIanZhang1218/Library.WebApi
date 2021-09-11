@@ -19,5 +19,6 @@ namespace JWT.MvcDemo.Models
         public string Message { get; set; }
 
         public string Token { get; set; }
+        public List<ManageReader> ReaderList { get; set; }
     }
 }

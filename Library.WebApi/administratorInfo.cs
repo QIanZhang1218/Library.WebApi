@@ -19,4 +19,15 @@ namespace WebApplication
         public string Pwd { get; set; }
         public string Gender { get; set; }
     }
+    
+    //get admin info 
+    public class AdminInfo
+    {
+        public int AdminId { get; set; }
+        public string AdminName { get; set; }
+        public string AdminEmail { get; set; }
+        public string AdminGender { get; set; }
+        public string AdminToken { get; set; }
+        public string AdminRemark { get; set; }
+    }
 }

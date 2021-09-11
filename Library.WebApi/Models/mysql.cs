@@ -267,7 +267,7 @@ namespace Library.WebApi.Models
 		}
 		
 		//get reader info
-		public List<ManageReader> ExecuteGetUserInfo(string str)
+		public List<ManageReader> ExecuteGetUserId(string str)
 		{
 			MySqlConnection con = new MySqlConnection(constr);
 			MySqlDataReader dataReader = null;
@@ -310,11 +310,50 @@ namespace Library.WebApi.Models
 			return readersInfo;
 		}
 		
-		public List<ReserveBooks> GetBorrowListInfo(string str) {
+		public List<ReserveBooks> GetOverdueStatus(string str) {
+				MySqlConnection con = new MySqlConnection(constr);
+				MySqlDataReader dataReader = null;
+				//return value
+				List<ReserveBooks> borrowListInfo = null;
+				try
+				{
+					con.Open();
+					string sql = str;
+					MySqlCommand command = new MySqlCommand(sql, con);
+					dataReader = command.ExecuteReader();
+					if (dataReader != null && dataReader.HasRows)
+					{
+						borrowListInfo = new List<ReserveBooks>();
+						while (dataReader.Read())
+						{
+							borrowListInfo.Add(new ReserveBooks()
+							{
+								UserId = dataReader.GetInt32("reader_id"),
+								OverdueStatus = dataReader.GetBoolean("isOverdue")
+							});
+						}
+					}
+
+					dataReader.Close();
+				}
+				catch (Exception e)	
+				{
+					Console.WriteLine(e.Message);
+				}
+				finally
+				{
+					con.Close();
+				}
+				return borrowListInfo;
+			}
+		
+		//admin website get reader list table
+		public List<ManageReader> GetReaderList(string str)
+		{
 			MySqlConnection con = new MySqlConnection(constr);
 			MySqlDataReader dataReader = null;
 			//return value
-			List<ReserveBooks> borrowListInfo = null;
+			List<ManageReader> readersInfo = null;
 			try
 			{
 				con.Open();
@@ -323,19 +362,18 @@ namespace Library.WebApi.Models
 				dataReader = command.ExecuteReader();
 				if (dataReader != null && dataReader.HasRows)
 				{
-					borrowListInfo = new List<ReserveBooks>();
+					readersInfo = new List<ManageReader>();
 					while (dataReader.Read())
 					{
-						borrowListInfo.Add(new ReserveBooks()
+						readersInfo.Add(new ManageReader()
 						{
-							UserId = dataReader.GetInt32("reader_id"),
-							OverdueStatus = dataReader.GetBoolean("isOverdue")
-							// ReaderName = dataReader.GetString("reader_name"),
-							// ReaderEmail = dataReader.GetString("reader_email"),
-							// ReaderUnpaid = dataReader.GetInt32("reader_unpaid_penalty"),
-							// ReaderOnhold = dataReader.GetInt32("reader_borrow_numbers"),
-							// ReaderRemark = dataReader.IsDBNull("reader_remark") ? null : dataReader.GetString("reader_remark"),
-							// Token = dataReader.IsDBNull("token") ? null : dataReader.GetString("token"),
+							ReaderId = dataReader.GetInt32("reader_id"),
+							ReaderName = dataReader.GetString("reader_name"),
+							ReaderEmail = dataReader.GetString("reader_email"),
+							ReaderUnpaid = dataReader.GetInt32("reader_unpaid_penalty"),
+							ReaderOnhold = dataReader.GetInt32("reader_borrow_numbers"),
+							ReaderRemark = dataReader.IsDBNull("reader_remark") ? null : dataReader.GetString("reader_remark"),
+							Token = dataReader.IsDBNull("token") ? null : dataReader.GetString("token"),
 						});
 					}
 				}
@@ -350,8 +388,53 @@ namespace Library.WebApi.Models
 			{
 				con.Close();
 			}
-			return borrowListInfo;
+			return readersInfo;
 		}
+		
+		//get admin id and token
+		public List<AdminInfo> GetAdminId(string str)
+		{
+			MySqlConnection con = new MySqlConnection(constr);
+			MySqlDataReader dataReader = null;
+			//return value
+			List<AdminInfo> adminInfo = null;
+			try
+			{
+				con.Open();
+				string sql = str;
+				MySqlCommand command = new MySqlCommand(sql, con);
+				dataReader = command.ExecuteReader();
+				if (dataReader != null && dataReader.HasRows)
+				{
+					adminInfo = new List<AdminInfo>();
+					while (dataReader.Read())
+					{
+						adminInfo.Add(new AdminInfo()
+						{
+							AdminId = dataReader.GetInt32("admin_id"),
+							// AdminName = dataReader.GetString("admin_name"),
+							// AdminEmail = dataReader.GetString("admin-email"),
+							// AdminGender = dataReader.GetString("admin_gender"),
+							// AdminToken = dataReader.GetString("token"),
+							// AdminRemark = dataReader.IsDBNull("admin_remark") ? null : dataReader.GetString("admin_remark")
+						});
+					}
+				}
+
+				dataReader.Close();
+			}
+			catch (Exception e)	
+			{
+				Console.WriteLine(e.Message);
+			}
+			finally
+			{
+				con.Close();
+			}
+			return adminInfo;
 		}
-    }
+	}
+}
+
+
 

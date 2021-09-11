@@ -85,9 +85,9 @@ namespace Library.WebApi.Controllers
                 // //update reader overdue status from borrow_list table
                 // database.ExecuteNonQuery(
                 //     $" Update library_schema.borrow_list SET isOverdue = true WHERE (return_date < Date(now()) AND isReturn = false And isPickup = 1);");
-                var reader = database.ExecuteGetUserInfo($"SELECT reader_id FROM library_schema.reader WHERE (`token` = '{userToken}');");
+                var reader = database.ExecuteGetUserId($"SELECT reader_id FROM library_schema.reader WHERE (`token` = '{userToken}');");
                 int readerId = reader[0].ReaderId;
-                var recordList = database.GetBorrowListInfo($"SELECT * FROM library_schema.borrow_list WHERE (`reader_id` = '{readerId}');");
+                var recordList = database.GetOverdueStatus($"SELECT * FROM library_schema.borrow_list WHERE (`reader_id` = '{readerId}');");
                 Boolean isOverdue = false;
                 for (int i = 0; i < recordList.Count; i++)
                 {
@@ -135,44 +135,73 @@ namespace Library.WebApi.Controllers
         {
             string userToken = Request.Cookies["token"];
             Mysql database = new Mysql();
-            var reader = database.ExecuteGetUserInfo($"SELECT reader_id FROM library_schema.reader WHERE (`token` = '{userToken}');");
-            var res = database.ExecuteGetBorrowRecords($"SELECT * FROM library_schema.borrow_list WHERE (`reader_id` = '{reader[0].ReaderId}');");
-            var isSignin = database.ExecuteGetBooksList($"SELECT * FROM library_schema.reader WHERE (`token` = '{userToken}');");
-            if (res != null)
+            var reader = database.ExecuteGetUserId($"SELECT reader_id FROM library_schema.reader WHERE (`token` = '{userToken}');");
+            //var res = database.ExecuteGetBorrowRecords($"SELECT * FROM library_schema.borrow_list WHERE (`reader_id` = '{reader[0].ReaderId}');");
+            //var isSignin = database.ExecuteGetBooksList($"SELECT * FROM library_schema.reader WHERE (`token` = '{userToken}');");
+            if (reader == null)
             {
-                if (isSignin != null)
+                return new StatusResponse
                 {
-
-                    return new StatusResponse
-                    {
-                        Success = true,
-                        Message = "",
-                        BookList = res,
-                    };
-                }
-                else
-                {
-                    return new StatusResponse
-                        { Success = false, Message = "Have not sign in."};
-                }
+                    Success = false, Message = "Have not sign in."
+                };
             }
             else
             {
-                if (isSignin != null)
+                var res = database.ExecuteGetBorrowRecords($"SELECT * FROM library_schema.borrow_list WHERE (`reader_id` = '{reader[0].ReaderId}');");
+                if (res == null)
                 {
-
                     return new StatusResponse
-                    {
-                        Success = true,
-                        Message = "No records",
-                    };
+                        {
+                            Success = true,
+                            Message = "No records",
+                        };
                 }
                 else
                 {
                     return new StatusResponse
-                        { Success = false, Message = "Have not sign in."};
+                    {
+                        Success = true,
+                        Message = "Get Records",
+                        BookList = res,
+
+                    };
                 }
             }
+            // if (res != null)
+            // {
+            //     if (isSignin != null)
+            //     {
+            //
+            //         return new StatusResponse
+            //         {
+            //             Success = true,
+            //             Message = "",
+            //             BookList = res,
+            //         };
+            //     }
+            //     else
+            //     {
+            //         return new StatusResponse
+            //             { Success = false, Message = "Have not sign in."};
+            //     }
+            // }
+            // else
+            // {
+            //     if (isSignin != null)
+            //     {
+            //
+            //         return new StatusResponse
+            //         {
+            //             Success = true,
+            //             Message = "No records",
+            //         };
+            //     }
+            //     else
+            //     {
+            //         return new StatusResponse
+            //             { Success = false, Message = "Have not sign in."};
+            //     }
+            // }
 
 
         }
