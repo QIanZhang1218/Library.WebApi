@@ -167,43 +167,6 @@ namespace Library.WebApi.Controllers
                     };
                 }
             }
-            // if (res != null)
-            // {
-            //     if (isSignin != null)
-            //     {
-            //
-            //         return new StatusResponse
-            //         {
-            //             Success = true,
-            //             Message = "",
-            //             BookList = res,
-            //         };
-            //     }
-            //     else
-            //     {
-            //         return new StatusResponse
-            //             { Success = false, Message = "Have not sign in."};
-            //     }
-            // }
-            // else
-            // {
-            //     if (isSignin != null)
-            //     {
-            //
-            //         return new StatusResponse
-            //         {
-            //             Success = true,
-            //             Message = "No records",
-            //         };
-            //     }
-            //     else
-            //     {
-            //         return new StatusResponse
-            //             { Success = false, Message = "Have not sign in."};
-            //     }
-            // }
-
-
         }
 
         //Extend borrow time period (7 days a time)

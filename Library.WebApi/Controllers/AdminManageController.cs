@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using Library.WebApi.Models;
 using Microsoft.AspNetCore.Http;
 using JWT.MvcDemo.Models;
-using WebApplication;
+
 
 namespace Library.WebApi.Controllers
 {
@@ -57,5 +57,37 @@ namespace Library.WebApi.Controllers
                 }
             }
         }
+        
+        //delete selected reader info}
+        [HttpPost]
+        public object DeleteUserInfo([FromBody] ManageReader para){ 
+            string adminToken = Request.Cookies["token"];
+            Mysql database = new Mysql();
+            var admin = database.GetAdminId($"SELECT * FROM library_schema.admin WHERE (`token` = '{adminToken}');");
+            // if (admin != null)
+            // {
+                try
+                {
+                    database.ExecuteNonQuery(
+                        $" DELETE FROM `library_schema`.`reader` WHERE (`reader_id` = {para.ReaderId});");
+                    return new AdminStatusResponse
+                        { Success = true, Message = "Delete Successful." };
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
+            // }
+            // else
+            // {
+            //     return new AdminStatusResponse
+            //         { Success = false, Message = "Please login first."};
+            // }
+        }
     }
+    
+
+   
+
 }
