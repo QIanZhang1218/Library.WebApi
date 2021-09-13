@@ -374,6 +374,7 @@ namespace Library.WebApi.Models
 							ReaderOnhold = dataReader.GetInt32("reader_borrow_numbers"),
 							ReaderRemark = dataReader.IsDBNull("reader_remark") ? null : dataReader.GetString("reader_remark"),
 							Token = dataReader.IsDBNull("token") ? null : dataReader.GetString("token"),
+							Pwd = dataReader.GetString("reader_pwd")
 						});
 					}
 				}

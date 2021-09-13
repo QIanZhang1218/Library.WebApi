@@ -89,17 +89,19 @@ namespace Library.WebApi.Controllers
                 int readerId = reader[0].ReaderId;
                 var recordList = database.GetOverdueStatus($"SELECT * FROM library_schema.borrow_list WHERE (`reader_id` = '{readerId}');");
                 Boolean isOverdue = false;
-                for (int i = 0; i < recordList.Count; i++)
+                if (recordList != null)
                 {
-                    while (recordList[i].OverdueStatus == true)
+                    for (int i = 0; i < recordList.Count; i++)
                     {
-                        isOverdue = true;
-                        break;
+                        while (recordList[i].OverdueStatus == true)
+                        {
+                            isOverdue = true;
+                            break;
+                        }
                     }
                 }
-                
-                var isSignin = database.ExecuteGetBooksList($"SELECT * FROM library_schema.reader WHERE (`token` = '{userToken}');");
-                if (isSignin != null && isOverdue == false)
+                // var isSignin = database.ExecuteGetBooksList($"SELECT * FROM library_schema.reader WHERE (`token` = '{userToken}');");
+                if (reader != null && isOverdue == false)
                 {
                     var res = database.ExecuteGetBooksList($"SELECT * FROM library_schema.books WHERE (`book_id` = {para.BookId});");
                     database.ExecuteNonQuery(
@@ -108,7 +110,7 @@ namespace Library.WebApi.Controllers
                         $" UPDATE `library_schema`.`books` SET `book_current_amount` = book_current_amount-1 WHERE (`book_id` = {para.BookId});");
                     return new StatusResponse
                         { Success = true, Message = "Record SuccessFully Saved."};
-                }else if(isSignin != null && isOverdue == true)
+                }else if(reader != null && isOverdue)
                 {
                     return new StatusResponse
                         { Success = false, Message = "You have overdue books or unpaid fines"};

@@ -31,5 +31,6 @@ namespace Library.WebApi
         public int ReaderOnhold { get; set; }
         public string ReaderRemark { get; set; }
         public string Token { get; set; }
+        public string Pwd { get; set; }
     }
 }
