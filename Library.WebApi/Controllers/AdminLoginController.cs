@@ -44,10 +44,20 @@ namespace Library.WebApi.Controllers
             Mysql database = new Mysql();
             try
             {
-                database.ExecuteNonQuery(
-                    $"INSERT INTO `library_schema`.`admin` (`admin_name`, `admin_pwd`, `admin_email`, `admin_gender`) VALUES ('{para.Name}', '{para.Pwd}', '{para.Email}','{para.Gender}')");
-                return new AdminStatusResponse
-                    { Success = true, Message = "Record SuccessFully Saved.",Token="fake-jwt-token" };
+                var res = database.ExecuteNonQueryReturn(
+                    $"INSERT INTO `library_schema`.`admin` (`admin_name`, `admin_pwd`, `admin_email`, `admin_gender`) VALUES ('{para.Name}', '{para.Password}', '{para.Email}','{para.Gender}')");
+                if (res == "Success")
+                {
+                    return new AdminStatusResponse
+                        { Success = true, Message = "Record SuccessFully Saved."};
+                }
+                else if (res == $"Duplicate entry '{para.Email}' for key 'admin.admin_email_UNIQUE'")
+                {
+                    return new AdminStatusResponse
+                    {
+                        Success = false, Message = "Email already exist"
+                    };
+                }
             }
             catch (Exception e)
             {
@@ -55,6 +65,10 @@ namespace Library.WebApi.Controllers
                 return new AdminStatusResponse
                     { Success = false, Message = "Invalid Data." };
             }
+            return new AdminStatusResponse
+            {
+                Success = false,Message = "Failed"
+            };
         }
     }
 }

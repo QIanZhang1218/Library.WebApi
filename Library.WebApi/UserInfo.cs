@@ -16,12 +16,6 @@ namespace Library.WebApi
 
 
     }
-
-    public class LoginStatus
-    {
-        public bool SignIn { get; set; }
-    }
-
     public class ManageReader
     {
         public int ReaderId { get; set; }

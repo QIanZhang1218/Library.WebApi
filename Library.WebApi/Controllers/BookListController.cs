@@ -51,8 +51,6 @@ namespace Library.WebApi.Controllers
         {
             Mysql database = new Mysql();
             var res = database.ExecuteGetBooksList($"SELECT * FROM library_schema.books WHERE book_id = {bookId}");
-            // string[] column = new string[] { "bookId"};
-            // int[] columnvalue = new int[1] { bookId };
             return Enumerable.Range(1, res.Count).Select(index => new Books()
             {
                 BookId = res[index-1].BookId,
@@ -83,8 +81,6 @@ namespace Library.WebApi.Controllers
             try
             {
                 // //update reader overdue status from borrow_list table
-                // database.ExecuteNonQuery(
-                //     $" Update library_schema.borrow_list SET isOverdue = true WHERE (return_date < Date(now()) AND isReturn = false And isPickup = 1);");
                 var reader = database.ExecuteGetUserId($"SELECT reader_id FROM library_schema.reader WHERE (`token` = '{userToken}');");
                 int readerId = reader[0].ReaderId;
                 var recordList = database.GetOverdueStatus($"SELECT * FROM library_schema.borrow_list WHERE (`reader_id` = '{readerId}');");
@@ -107,7 +103,7 @@ namespace Library.WebApi.Controllers
                     database.ExecuteNonQuery(
                         $"INSERT INTO `library_schema`.`borrow_list` (`reader_id`, `book_id`, `book_name`, `borrow_date`, `return_date`,`penalty`) VALUES ('{readerId}', '{para.BookId}','{res[0].BookName}', '{para.BorrowDate.ToString("yyyy-MM-dd HH:mm:ss")}','{para.BorrowDate.AddDays(7).ToString("yyyyMMddHHmmss")}','{para.Penalty}')");
                     database.ExecuteNonQuery(
-                        $" UPDATE `library_schema`.`books` SET `book_current_amount` = book_current_amount-1 WHERE (`book_id` = {para.BookId});");
+                        $" UPDATE `library_schema`.`books` SET `book_current_amount` = book_current_amount-1,`book_borrow_times` = book_borrow_times+1 WHERE (`book_id` = {para.BookId});");
                     return new StatusResponse
                         { Success = true, Message = "Record SuccessFully Saved."};
                 }else if(reader != null && isOverdue)
@@ -138,8 +134,6 @@ namespace Library.WebApi.Controllers
             string userToken = Request.Cookies["token"];
             Mysql database = new Mysql();
             var reader = database.ExecuteGetUserId($"SELECT reader_id FROM library_schema.reader WHERE (`token` = '{userToken}');");
-            //var res = database.ExecuteGetBorrowRecords($"SELECT * FROM library_schema.borrow_list WHERE (`reader_id` = '{reader[0].ReaderId}');");
-            //var isSignin = database.ExecuteGetBooksList($"SELECT * FROM library_schema.reader WHERE (`token` = '{userToken}');");
             if (reader == null)
             {
                 return new StatusResponse
@@ -182,7 +176,7 @@ namespace Library.WebApi.Controllers
                 database.ExecuteNonQuery(
                         $" UPDATE `library_schema`.`borrow_list` SET `return_date` = date_add(return_date,interval 1 week) WHERE (`record_id` = {para.RecordId});");
                     return new StatusResponse
-                        { Success = true, Message = "Record SuccessFully Saved.",Token="fake-jwt-token" };
+                        { Success = true, Message = "Record SuccessFully Saved."};
             }
             catch (Exception e)
             {

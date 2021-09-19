@@ -16,7 +16,7 @@ namespace WebApplication
     {
         public string Name { get; set; }
         public string Email { get; set; }
-        public string Pwd { get; set; }
+        public string Password { get; set; }
         public string Gender { get; set; }
     }
     
@@ -29,5 +29,6 @@ namespace WebApplication
         public string AdminGender { get; set; }
         public string AdminToken { get; set; }
         public string AdminRemark { get; set; }
+        public string AdminPassword { get; set; }
     }
 }

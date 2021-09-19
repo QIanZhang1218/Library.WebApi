@@ -17,18 +17,34 @@ namespace Library.WebApi.Controllers
             Mysql database = new Mysql();
             try
             {
-                database.ExecuteNonQuery(
+                var res = database.ExecuteNonQueryReturn(
                     $"INSERT INTO `library_schema`.`reader` (`reader_name`, `reader_pwd`, `reader_email`) VALUES ('{para.Name}', '{para.Password}', '{para.Email}')");
-                return new StatusResponse
-                    { Success = true, Message = "Record SuccessFully Saved.",Token="fake-jwt-token" };
+                Console.WriteLine(res);
+                if (res == "Success")
+                {
+                    return new AdminStatusResponse
+                        { Success = true, Message = "Record SuccessFully Saved."};
+                }
+                else if (res == $"Duplicate entry '{para.Email}' for key 'reader.reader_email_UNIQUE'")
+                {
+                    return new AdminStatusResponse
+                    {
+                        Success = false, Message = "Email already exist"
+                    };
+                }
             }
             catch (Exception e)
             {
                 Console.WriteLine(e.Message);
-                return new StatusResponse
+                return new AdminStatusResponse
                     { Success = false, Message = "Invalid Data." };
             }
-            
+
+            return new AdminStatusResponse
+            {
+                Success = false,Message = "Failed"
+            };
+
         }
     }
 }

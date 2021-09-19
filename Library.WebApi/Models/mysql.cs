@@ -14,8 +14,8 @@ namespace Library.WebApi.Models
     {
     	//连接字符串
     	private static string constr = "server=127.0.0.1;port=3306;database=library_schema;user=root;password=mm970708";
-		
-		// 无返回执行： 修改 or 插入 or 删除
+        
+		//No return: modify, insert or delete
 		public void ExecuteNonQuery(string str)
         {
             var con = new MySqlConnection(constr);
@@ -37,6 +37,30 @@ namespace Library.WebApi.Models
                 con.Close();
             }
         }
+		//With return:modify, insert or delete
+		public string ExecuteNonQueryReturn(string str)
+		{
+			var con = new MySqlConnection(constr);
+			try
+			{
+				//连接数据库
+				con.Open();
+				string sql = str;
+				MySqlCommand command = new MySqlCommand(sql, con);
+				command.ExecuteNonQuery();
+				return ("Success");
+			}
+			catch (Exception e)
+			{
+				return (e.Message);
+			}
+			finally
+			{
+				// 记得关闭连接
+				con.Close();
+			}
+		}
+		
 		//Get books info
 		public List<Books> ExecuteGetBooksList(string str)
 		{
@@ -347,6 +371,48 @@ namespace Library.WebApi.Models
 				return borrowListInfo;
 			}
 		
+		//get admin id and token
+		public List<AdminInfo> GetAdminId(string str)
+		{
+			MySqlConnection con = new MySqlConnection(constr);
+			MySqlDataReader dataReader = null;
+			//return value
+			List<AdminInfo> adminInfo = null;
+			try
+			{
+				con.Open();
+				string sql = str;
+				MySqlCommand command = new MySqlCommand(sql, con);
+				dataReader = command.ExecuteReader();
+				if (dataReader != null && dataReader.HasRows)
+				{
+					adminInfo = new List<AdminInfo>();
+					while (dataReader.Read())
+					{
+						adminInfo.Add(new AdminInfo()
+						{
+							AdminId = dataReader.GetInt32("admin_id"),
+							// AdminName = dataReader.GetString("admin_name"),
+							// AdminEmail = dataReader.GetString("admin-email"),
+							// AdminGender = dataReader.GetString("admin_gender"),
+							// AdminToken = dataReader.GetString("token"),
+							// AdminRemark = dataReader.IsDBNull("admin_remark") ? null : dataReader.GetString("admin_remark")
+						});
+					}
+				}
+
+				dataReader.Close();
+			}
+			catch (Exception e)	
+			{
+				Console.WriteLine(e.Message);
+			}
+			finally
+			{
+				con.Close();
+			}
+			return adminInfo;
+		}
 		//admin website get reader list table
 		public List<ManageReader> GetReaderList(string str)
 		{
@@ -392,8 +458,7 @@ namespace Library.WebApi.Models
 			return readersInfo;
 		}
 		
-		//get admin id and token
-		public List<AdminInfo> GetAdminId(string str)
+		public List<AdminInfo> GetAdminList(string str)
 		{
 			MySqlConnection con = new MySqlConnection(constr);
 			MySqlDataReader dataReader = null;
@@ -404,7 +469,7 @@ namespace Library.WebApi.Models
 				con.Open();
 				string sql = str;
 				MySqlCommand command = new MySqlCommand(sql, con);
-				dataReader = command.ExecuteReader();
+				dataReader = command.ExecuteReader(); 
 				if (dataReader != null && dataReader.HasRows)
 				{
 					adminInfo = new List<AdminInfo>();
@@ -413,11 +478,12 @@ namespace Library.WebApi.Models
 						adminInfo.Add(new AdminInfo()
 						{
 							AdminId = dataReader.GetInt32("admin_id"),
-							// AdminName = dataReader.GetString("admin_name"),
-							// AdminEmail = dataReader.GetString("admin-email"),
-							// AdminGender = dataReader.GetString("admin_gender"),
-							// AdminToken = dataReader.GetString("token"),
-							// AdminRemark = dataReader.IsDBNull("admin_remark") ? null : dataReader.GetString("admin_remark")
+							AdminName = dataReader.GetString("admin_name"),
+							AdminEmail = dataReader.GetString("admin_email"),
+							AdminGender = dataReader.GetString("admin_gender"),
+							AdminToken = dataReader.IsDBNull("token") ? null : dataReader.GetString("token"),
+							AdminRemark = dataReader.IsDBNull("admin_remark") ? null : dataReader.GetString("admin_remark"),
+							AdminPassword = dataReader.GetString("admin_pwd")
 						});
 					}
 				}
