@@ -281,6 +281,68 @@ namespace Library.WebApi.Controllers
             return new GetUserInfoResponse
                         {Success = false, Message = "Please login first."};
         }
+         
+        //Edit book
+        // [HttpPost]
+        // public object 
+        //delete book
+        [HttpPost]
+        public object DeleteBookInfo([FromBody] Books para)
+        {
+            string adminToken = Request.Cookies["token"];
+            Mysql database = new Mysql();
+            var admin = database.GetAdminId($"SELECT * FROM library_schema.admin WHERE (`token` = '{adminToken}');");
+            //No borrow records then no borrow fine
+            if (admin != null)
+            {
+                try
+                {
+                    database.ExecuteNonQuery(
+                        $" DELETE FROM `library_schema`.`books` WHERE (`book_id` = {para.BookId});");
+                    return new GetUserInfoResponse
+                        {Success = true, Message = "Delete Successful."};
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
+            }
+
+            return new GetUserInfoResponse
+                {Success = false, Message = "Please login first."};
+        }  
+        //Add new book
+        [HttpPost]
+         public object AddNewBook([FromBody] Books para)
+         {
+             Mysql database = new Mysql();
+             string adminToken = Request.Cookies["token"];
+              var admin = database.GetAdminId($"SELECT * FROM library_schema.admin WHERE (`token` = '{adminToken}');");
+              if (admin != null)
+             {
+                 try
+                 {
+                     var res = database.ExecuteNonQueryReturn(
+                         $"INSERT INTO `library_schema`.`books` (`book_class`, `book_name`, `book_author`, `book_pages`,`book_abstract`,`book_amount`,`book_current_amount`,`book_borrow_times`,`book_remark`,`publication_info`,`book_language`,`book_location`,`book_img`,`publication_date`,`book_content`,`book_summary`) VALUES ('{para.BookClass}', '{para.BookName}', '{para.BookAuthor}','{para.BookPages}','{para.BookAbstract}','{para.BookAmount}','{para.BookCurrentAmount}','{para.BookBorrowTimes}','{para.BookRemark}','{para.BookPublishInfo}','{para.BookLanguage}','{para.BookLocation}','{para.BookImg}','{para.BookPublishDate}','{para.BookContent}','{para.BookSummary}')");
+                     if (res == "Success")
+                     {
+                         return new AdminStatusResponse
+                             { Success = true, Message = "Edit Successful."};
+                     }
+                 }
+                 catch (Exception e)
+                 {
+                     Console.WriteLine(e);
+                     throw;
+                 }
+             }
+             return new GetAdminInfoResponse
+             {
+                 Success = false, Message = "Have not log in."
+             };
+         }
+
     }
 }
     

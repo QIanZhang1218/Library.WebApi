@@ -169,7 +169,7 @@ namespace Library.WebApi.Controllers
         [HttpPost]
         public object ExtendBorrowTime([FromBody] ReserveBooks para)
         {
-            Console.WriteLine(para.ReturnDate);
+            // Console.WriteLine(para.ReturnDate);
             Mysql database = new Mysql();
             try
             {
@@ -186,6 +186,5 @@ namespace Library.WebApi.Controllers
             }
             
         }
-
     }
 }

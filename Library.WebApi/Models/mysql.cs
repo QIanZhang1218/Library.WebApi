@@ -86,7 +86,7 @@ namespace Library.WebApi.Models
 							BookClass = dataReader.GetString("book_class"),
 							BookName = dataReader.GetString("book_name"),
 							BookAuthor = dataReader.GetString("book_author"),
-							BookPages = dataReader.IsDBNull("book_pages") ? 0 : dataReader.GetInt32("book_pages"),
+							BookPages = dataReader.IsDBNull("book_pages") ? null : dataReader.GetString("book_pages"),
 							BookAbstract = dataReader.IsDBNull("book_abstract") ? null : dataReader.GetString("book_abstract"),
 							BookAmount = dataReader.GetInt32("book_amount"),
 							BookCurrentAmount = dataReader.GetInt32("book_current_amount"),

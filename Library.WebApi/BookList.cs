@@ -8,7 +8,7 @@ namespace Library.WebApi
         public string BookName { get; set; }
         public string BookClass { get; set; }
         public string BookAuthor { get; set; }
-        public int BookPages { get; set; }
+        public string BookPages { get; set; }
         public string BookAbstract { get; set; }
         public int BookAmount { get; set; }
         public int BookCurrentAmount { get; set; }
