@@ -283,8 +283,37 @@ namespace Library.WebApi.Controllers
         }
          
         //Edit book
-        // [HttpPost]
-        // public object 
+        [HttpPost]
+        public object EditBookInfo([FromBody] Books para)
+        {
+            Mysql database = new Mysql();
+            string adminToken = Request.Cookies["token"];
+            var admin = database.GetAdminId($"SELECT * FROM library_schema.admin WHERE (`token` = '{adminToken}');");
+            if (admin != null)
+            {
+                try
+                {
+                    var res = database.ExecuteNonQueryReturn(
+                        $" UPDATE `library_schema`.`books` SET `book_name` = '{para.BookName}', `book_class` = '{para.BookClass}', `book_author` = '{para.BookAuthor}', `book_pages` = '{para.BookPages}',`book_abstract` = '{para.BookAbstract}',`book_amount` = '{para.BookAmount}', `book_current_amount` = '{para.BookCurrentAmount}', `book_borrow_times` = '{para.BookBorrowTimes}', `book_remark` = '{para.BookRemark}', `publication_info` = '{para.BookPublishInfo}', `book_language` = '{para.BookLanguage}',`book_location` = '{para.BookLocation}', `book_img` = '{para.BookImg}', `publication_date` = '{para.BookPublishDate}',`book_content` = '{para.BookContent}',`book_summary` = '{para.BookSummary}' WHERE (`book_id` = '{para.BookId}');");
+                    if (res == "Success")
+                    {
+                        return new AdminStatusResponse
+                            { Success = true, Message = "Edit Successful."};
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
+            }
+
+            return new GetAdminInfoResponse
+            {
+                Success = false, Message = "Have not log in."
+            };
+        }
+        
         //delete book
         [HttpPost]
         public object DeleteBookInfo([FromBody] Books para)
