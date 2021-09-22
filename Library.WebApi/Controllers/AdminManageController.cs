@@ -221,6 +221,14 @@ namespace Library.WebApi.Controllers
         {
             Mysql database = new Mysql();
             string adminToken = Request.Cookies["token"];
+            var adminList = database.GetAdminList($"SELECT * FROM library_schema.admin;");
+            if (adminList == null)
+            {
+                return new AdminStatusResponse
+                {
+                    Success = false, Message = "No records"
+                };
+            }
             var admin = database.GetAdminId($"SELECT * FROM library_schema.admin WHERE (`token` = '{adminToken}');");
             if (admin != null)
             {
