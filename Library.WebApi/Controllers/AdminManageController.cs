@@ -130,6 +130,7 @@ namespace Library.WebApi.Controllers
                     {Success = false, Message = "Failed"};
             }
         }
+
         //edit reader info
         [HttpPost]
         public object EditUserInfo([FromBody] ManageReader para)
@@ -147,7 +148,7 @@ namespace Library.WebApi.Controllers
                     if (res == "Success")
                     {
                         return new AdminStatusResponse
-                            { Success = true, Message = "Edit Successful."};
+                            {Success = true, Message = "Edit Successful."};
                     }
                     else if (res == $"Duplicate entry '{para.ReaderEmail}' for key 'reader.reader_email_UNIQUE'")
                     {
@@ -162,7 +163,7 @@ namespace Library.WebApi.Controllers
                     Console.WriteLine(e);
                     throw;
                 }
-            
+
                 return ("Failed");
             }
             else
@@ -171,6 +172,7 @@ namespace Library.WebApi.Controllers
                     {Success = false, Message = "Have not log in."};
             }
         }
+
         //get admin list
         [HttpGet]
         public GetAdminInfoResponse GetAdminInfo()
@@ -215,6 +217,7 @@ namespace Library.WebApi.Controllers
                 }
             }
         }
+
         //edit admin info
         [HttpPost]
         public object EditAdminInfo([FromBody] AdminInfo para)
@@ -229,6 +232,7 @@ namespace Library.WebApi.Controllers
                     Success = false, Message = "No records"
                 };
             }
+
             var admin = database.GetAdminId($"SELECT * FROM library_schema.admin WHERE (`token` = '{adminToken}');");
             if (admin != null)
             {
@@ -239,7 +243,7 @@ namespace Library.WebApi.Controllers
                     if (res == "Success")
                     {
                         return new AdminStatusResponse
-                            { Success = true, Message = "Edit Successful."};
+                            {Success = true, Message = "Edit Successful."};
                     }
                     else if (res == $"Duplicate entry '{para.AdminEmail}' for key 'admin.admin_email_UNIQUE'")
                     {
@@ -261,10 +265,10 @@ namespace Library.WebApi.Controllers
                 Success = false, Message = "Have not log in."
             };
         }
-        
+
         //Delete admin 
         [HttpPost]
-         public object DeleteAdminInfo([FromBody] AdminInfo para)
+        public object DeleteAdminInfo([FromBody] AdminInfo para)
         {
             string adminToken = Request.Cookies["token"];
             Mysql database = new Mysql();
@@ -287,9 +291,9 @@ namespace Library.WebApi.Controllers
             }
 
             return new GetUserInfoResponse
-                        {Success = false, Message = "Please login first."};
+                {Success = false, Message = "Please login first."};
         }
-         
+
         //Edit book
         [HttpPost]
         public object EditBookInfo([FromBody] Books para)
@@ -306,7 +310,7 @@ namespace Library.WebApi.Controllers
                     if (res == "Success")
                     {
                         return new AdminStatusResponse
-                            { Success = true, Message = "Edit Successful."};
+                            {Success = true, Message = "Edit Successful."};
                     }
                 }
                 catch (Exception e)
@@ -321,7 +325,7 @@ namespace Library.WebApi.Controllers
                 Success = false, Message = "Have not log in."
             };
         }
-        
+
         //delete book
         [HttpPost]
         public object DeleteBookInfo([FromBody] Books para)
@@ -348,37 +352,67 @@ namespace Library.WebApi.Controllers
 
             return new GetUserInfoResponse
                 {Success = false, Message = "Please login first."};
-        }  
+        }
+
         //Add new book
         [HttpPost]
-         public object AddNewBook([FromBody] Books para)
-         {
-             Mysql database = new Mysql();
-             string adminToken = Request.Cookies["token"];
-              var admin = database.GetAdminId($"SELECT * FROM library_schema.admin WHERE (`token` = '{adminToken}');");
-              if (admin != null)
-             {
-                 try
-                 {
-                     var res = database.ExecuteNonQueryReturn(
-                         $"INSERT INTO `library_schema`.`books` (`book_class`, `book_name`, `book_author`, `book_pages`,`book_abstract`,`book_amount`,`book_current_amount`,`book_borrow_times`,`book_remark`,`publication_info`,`book_language`,`book_location`,`book_img`,`publication_date`,`book_content`,`book_summary`) VALUES ('{para.BookClass}', '{para.BookName}', '{para.BookAuthor}','{para.BookPages}','{para.BookAbstract}','{para.BookAmount}','{para.BookCurrentAmount}','{para.BookBorrowTimes}','{para.BookRemark}','{para.BookPublishInfo}','{para.BookLanguage}','{para.BookLocation}','{para.BookImg}','{para.BookPublishDate}','{para.BookContent}','{para.BookSummary}')");
-                     if (res == "Success")
-                     {
-                         return new AdminStatusResponse
-                             { Success = true, Message = "Edit Successful."};
-                     }
-                 }
-                 catch (Exception e)
-                 {
-                     Console.WriteLine(e);
-                     throw;
-                 }
-             }
-             return new GetAdminInfoResponse
-             {
-                 Success = false, Message = "Have not log in."
-             };
-         }
+        public object AddNewBook([FromBody] Books para)
+        {
+            Mysql database = new Mysql();
+            string adminToken = Request.Cookies["token"];
+            var admin = database.GetAdminId($"SELECT * FROM library_schema.admin WHERE (`token` = '{adminToken}');");
+            if (admin != null)
+            {
+                try
+                {
+                    var res = database.ExecuteNonQueryReturn(
+                        $"INSERT INTO `library_schema`.`books` (`book_class`, `book_name`, `book_author`, `book_pages`,`book_abstract`,`book_amount`,`book_current_amount`,`book_borrow_times`,`book_remark`,`publication_info`,`book_language`,`book_location`,`book_img`,`publication_date`,`book_content`,`book_summary`) VALUES ('{para.BookClass}', '{para.BookName}', '{para.BookAuthor}','{para.BookPages}','{para.BookAbstract}','{para.BookAmount}','{para.BookCurrentAmount}','{para.BookBorrowTimes}','{para.BookRemark}','{para.BookPublishInfo}','{para.BookLanguage}','{para.BookLocation}','{para.BookImg}','{para.BookPublishDate}','{para.BookContent}','{para.BookSummary}')");
+                    if (res == "Success")
+                    {
+                        return new AdminStatusResponse
+                            {Success = true, Message = "Edit Successful."};
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
+            }
+
+            return new GetAdminInfoResponse
+            {
+                Success = false, Message = "Have not log in."
+            };
+        }
+
+        //get borrow records
+        [HttpGet]
+        public BorrowRecordsResponse GetBorrowRecords()
+        {
+            string adminToken = Request.Cookies["token"];
+            Mysql database = new Mysql();
+            //var admin = database.GetAdminId($"SELECT * FROM library_schema.admin WHERE (`token` = '{adminToken}');");
+            var res = database.ExecuteGetBorrowRecords($"SELECT * FROM library_schema.borrow_list");
+            if (res == null)
+            {
+                return new BorrowRecordsResponse
+                {
+                    Success = true,
+                    Message = "No records",
+                };
+            }
+            else
+            {
+                return new BorrowRecordsResponse
+                {
+                    Success = true,
+                    Message = "Get Records",
+                    BorrowRecords = res,
+
+                };
+            }
+        }
 
     }
 }

@@ -143,6 +143,14 @@ namespace Library.WebApi.Controllers
             }
             else
             {
+                var resStatue = database.ExecuteGetPenalty(
+                    $"SELECT * FROM library_schema.borrow_list WHERE (`reader_id` = '{reader[0].ReaderId}');");
+                if (!resStatue)
+                {
+                    return new StatusResponse()  {
+                        Success = false, Message = "Retry."
+                    };
+                }
                 var res = database.ExecuteGetBorrowRecords($"SELECT * FROM library_schema.borrow_list WHERE (`reader_id` = '{reader[0].ReaderId}');");
                 if (res == null)
                 {
