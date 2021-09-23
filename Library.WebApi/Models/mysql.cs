@@ -245,25 +245,6 @@ namespace Library.WebApi.Models
 					borrowRecords = new List<ReserveBooks>();
 					while (dataReader.Read())
 					{
-						//get return status 
-						// int borrowStatus = dataReader.GetInt32("borrow_status");
-						// bool isReturn = dataReader.GetBoolean("isReturn");
-						// bool isPaid = dataReader.GetBoolean("isPaid");
-						// bool isPickUp = dataReader.GetBoolean("isPickUp");
-						// readerId = dataReader.GetInt32("reader_id");
-						// DateTime currentTime = Convert.ToDateTime(DateTime.Now.ToLongDateString().ToString());
-						// DateTime returnTime = dataReader.GetDateTime("return_date");
-						// int result = DateTime.Compare(currentTime, returnTime);
-						// readers who has pick up their reservation and overdue and the penalty is unpaid then will add penalty amount day by day.
-						// if (borrowStatus == 20 && result==1 && isPaid == false)
-						// {
-						//     int delay = Convert.ToInt32(currentTime .Subtract(returnTime).Days.ToString());
-						//     //Penalty: $5 each day
-						//     decimal penalty =delay * 5;
-						//     penaltySum += penalty;
-						//     ExecuteNonQuery(
-						//         $"UPDATE `library_schema`.`borrow_list` SET `penalty` = '{penalty}',`borrow_status`= 40 WHERE (`record_id` = {dataReader.GetInt32("record_id")})");
-						// }
 						borrowRecords.Add(new ReserveBooks()
 						{
 							RecordId = dataReader.GetInt32("record_id"),
@@ -278,9 +259,6 @@ namespace Library.WebApi.Models
 							
 						});
 					}
-					//Console.WriteLine("!"+penaltySum);
-					// ExecuteNonQuery(
-					// 	$"UPDATE `library_schema`.`reader` SET `reader_unpaid_penalty` = {penaltySum} WHERE (`reader_id` = {readerId})");
 					return borrowRecords;
 				}
 

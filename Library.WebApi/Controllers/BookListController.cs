@@ -184,7 +184,7 @@ namespace Library.WebApi.Controllers
                 database.ExecuteNonQuery(
                         $" UPDATE `library_schema`.`borrow_list` SET `return_date` = date_add(return_date,interval 1 week) WHERE (`record_id` = {para.RecordId});");
                     return new StatusResponse
-                        { Success = true, Message = "Record SuccessFully Saved."};
+                        { Success = true, Message = "Extend Successfully."};
             }
             catch (Exception e)
             {

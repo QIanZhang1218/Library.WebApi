@@ -1,4 +1,5 @@
 using System;
+using System.Data.Common;
 using Microsoft.AspNetCore.Mvc;
 using Library.WebApi.Models;
 using Microsoft.AspNetCore.Http;
@@ -392,8 +393,16 @@ namespace Library.WebApi.Controllers
         {
             string adminToken = Request.Cookies["token"];
             Mysql database = new Mysql();
-            //var admin = database.GetAdminId($"SELECT * FROM library_schema.admin WHERE (`token` = '{adminToken}');");
+            var admin = database.GetAdminId($"SELECT * FROM library_schema.admin WHERE (`token` = '{adminToken}');");
             var res = database.ExecuteGetBorrowRecords($"SELECT * FROM library_schema.borrow_list");
+            if (admin == null)
+            {
+                return new BorrowRecordsResponse
+                {
+                    Success = false,
+                    Message = "Please Log In first.",
+                };
+            }
             if (res == null)
             {
                 return new BorrowRecordsResponse
@@ -413,7 +422,39 @@ namespace Library.WebApi.Controllers
                 };
             }
         }
-
+        
+        //pick up reserve book
+        [HttpPost]
+        public BorrowRecordsResponse PickUpBook([FromBody] ReserveBooks para)
+        {
+            string adminToken = Request.Cookies["token"];
+            Mysql database = new Mysql();
+            var admin = database.GetAdminId($"SELECT * FROM library_schema.admin WHERE (`token` = '{adminToken}');");
+            //var res = database.ExecuteGetBorrowRecords($"SELECT * FROM library_schema.borrow_list");
+            if (admin != null)
+            {
+                try
+                {
+                    var res = database.ExecuteNonQueryReturn(
+                        $"UPDATE `library_schema`.`borrow_list` SET `borrow_status` = 20 WHERE (`record_id` = '{para.RecordId}')");
+                    if (res == "Success")
+                    {
+                        return new BorrowRecordsResponse
+                            {Success = true, Message = "Pick Up Successful."};
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
+            }
+            return new BorrowRecordsResponse
+            {
+                Success = false, Message = "Please Log In first."
+            };
+        }
+        
     }
 }
     
