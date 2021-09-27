@@ -1,5 +1,7 @@
 using System;
+using System.Collections.Generic;
 using System.Data.Common;
+using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using Library.WebApi.Models;
 using Microsoft.AspNetCore.Http;
@@ -373,6 +375,11 @@ namespace Library.WebApi.Controllers
                         return new AdminStatusResponse
                             {Success = true, Message = "Edit Successful."};
                     }
+
+                    return new AdminStatusResponse
+                    {
+                        Success = false, Message = res
+                    };
                 }
                 catch (Exception e)
                 {
@@ -430,7 +437,6 @@ namespace Library.WebApi.Controllers
             string adminToken = Request.Cookies["token"];
             Mysql database = new Mysql();
             var admin = database.GetAdminId($"SELECT * FROM library_schema.admin WHERE (`token` = '{adminToken}');");
-            //var res = database.ExecuteGetBorrowRecords($"SELECT * FROM library_schema.borrow_list");
             if (admin != null)
             {
                 try
@@ -454,7 +460,181 @@ namespace Library.WebApi.Controllers
                 Success = false, Message = "Please Log In first."
             };
         }
+        //Return borrow book
+        [HttpPost]
+        public BorrowRecordsResponse ReturnBorrowBook([FromBody] ReserveBooks para)
+        {
+            string adminToken = Request.Cookies["token"];
+            Mysql database = new Mysql();
+            var admin = database.GetAdminId($"SELECT * FROM library_schema.admin WHERE (`token` = '{adminToken}');");
+            if (admin != null)
+            {
+                try
+                {
+                    if (para.Penalty > 0 && para.PenaltyStatus == false)
+                    {
+                        var res = database.ExecuteNonQueryReturn(
+                            $"UPDATE `library_schema`.`borrow_list` SET `borrow_status` = 40 WHERE (`record_id` = '{para.RecordId}')");
+                        if (res == "Success")
+                        {
+                            return new BorrowRecordsResponse
+                                {Success = true, Message = "Returned Successful.Please pay overdue penalty."};
+                        }
+                    }else if (para.Penalty == 0 || para.PenaltyStatus)
+                    {
+                        var res = database.ExecuteNonQueryReturn(
+                            $"UPDATE `library_schema`.`borrow_list` SET `borrow_status` = 30 WHERE (`record_id` = '{para.RecordId}')");
+                        if (res == "Success")
+                        {
+                            return new BorrowRecordsResponse
+                                {Success = true, Message = "Returned Successful"};
+                        }
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
+            }
+            return new BorrowRecordsResponse
+            {
+                Success = false, Message = "Please Log In first."
+            };
+        }
         
+        //Cancel reservation
+        [HttpPost]
+        public BorrowRecordsResponse CancelReservation([FromBody] ReserveBooks para)
+        {
+            string adminToken = Request.Cookies["token"];
+            Mysql database = new Mysql();
+            var admin = database.GetAdminId($"SELECT * FROM library_schema.admin WHERE (`token` = '{adminToken}');");
+            if (admin != null)
+            {
+                if (para.BorrowStatus != 10)
+                {
+                    switch (@para.BorrowStatus)
+                    {
+                        case 20:
+                            return new BorrowRecordsResponse
+                            {
+                                Success = false, Message = "You have already picked the book."
+                            };
+                        case 30:
+                            return new BorrowRecordsResponse
+                            {
+                                Success = false, Message = "You have already returned book."
+                            };
+                        case 40:
+                            return new BorrowRecordsResponse
+                            {
+                                Success = false, Message = "Please pay the overdue fine."
+                            };
+                        case 99:
+                            return new BorrowRecordsResponse
+                            {
+                                Success = false, Message = "The reservation has already been cancelled."
+                            };
+                        default:
+                            return new BorrowRecordsResponse
+                            {
+                                Success = false, Message = "Failed."
+                            };
+                    }
+                }
+                var res = database.ExecuteNonQueryReturn(
+                    $"UPDATE `library_schema`.`borrow_list` SET `borrow_status` = 99 WHERE (`record_id` = '{para.RecordId}')");
+                if (res == "Success")
+                {
+                    return new BorrowRecordsResponse
+                        {Success = true, Message = "Reservation Cancelled."};
+                }
+            }
+
+            return new BorrowRecordsResponse
+            {
+                Success = false, Message = "Please Log In first."
+            };
+        }
+        
+        //Dashboard unpaid penalties
+        [HttpGet]
+        public DashboardResponse GetUnpaidPenalty()
+        {
+            string adminToken = Request.Cookies["token"];
+            Mysql database = new Mysql();
+            var admin = database.GetAdminId($"SELECT * FROM library_schema.admin WHERE (`token` = '{adminToken}');");
+            decimal res = database.ExecuteUnpaidPenalty($"SELECT SUM(reader_unpaid_penalty) AS Total from reader;");
+            if (admin == null)
+            {
+                return new DashboardResponse
+                {
+                    Success = false,
+                    Message = "Please Log In first.",
+                };
+            }
+
+            return new DashboardResponse
+            {
+                Success = true, Message = "Get unpaid penalty", ReaderUnpaid = res
+            };
+        }
+        
+        //Dashboard recent reservation
+        [HttpGet]
+        public StatusResponse GetRecentReservation()
+        {
+            string adminToken = Request.Cookies["token"];
+            Mysql database = new Mysql();
+            var admin = database.GetAdminId($"SELECT * FROM library_schema.admin WHERE (`token` = '{adminToken}');");
+            var res = database.ExecuteGetBorrowRecords($"SELECT * FROM library_schema.borrow_list WHERE DATE_SUB(CURDATE(), INTERVAL 7 DAY) <= date(`reserve_date`);");
+            if (admin == null)
+            {
+                return new StatusResponse
+                {
+                    Success = false,
+                    Message = "Please Log In first.",
+                };
+            }
+            if (res == null)
+            {
+                return new StatusResponse
+                {
+                    Success = true,
+                    Message = "No records",
+                };
+            }
+            else
+            {
+                return new StatusResponse
+                {
+                    Success = true,
+                    Message = "Get Records",
+                    BookList = res,
+                };
+            }
+        }
+        
+        //Dashboard most popular books
+        [HttpGet]
+        public IEnumerable<Books> GetMostPopularBookLIst()
+        {
+            Mysql database = new Mysql();
+            var res = database.ExecuteGetBooksList("SELECT * FROM library_schema.books order by book_borrow_times desc limit 5");
+            return Enumerable.Range(1, res.Count).Select(index => new Books()
+            {
+                BookId = res[index-1].BookId,
+                BookName = res[index-1].BookName,
+                BookAuthor = res[index-1].BookAuthor,
+                BookBorrowTimes = res[index-1].BookBorrowTimes,
+                BookRemark = res[index-1].BookRemark,
+                BookPublishInfo = res [index-1].BookPublishInfo,
+                BookPublishDate = res[index-1].BookPublishDate,
+                BookLanguage = res[index-1].BookLanguage,
+            }).ToArray();
+        }
+
     }
 }
     

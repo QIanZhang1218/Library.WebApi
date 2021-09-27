@@ -256,7 +256,7 @@ namespace Library.WebApi.Models
 							Penalty = dataReader.GetDecimal("penalty"),
 							BorrowStatus = dataReader.GetInt32("borrow_status"),
 							PenaltyStatus = dataReader.GetBoolean("isPaid"),
-							
+							ReserveDate = dataReader.GetDateTime("reserve_date")
 						});
 					}
 					return borrowRecords;
@@ -387,7 +387,7 @@ namespace Library.WebApi.Models
 							borrowListInfo.Add(new ReserveBooks()
 							{
 								UserId = dataReader.GetInt32("reader_id"),
-								OverdueStatus = dataReader.GetBoolean("isOverdue")
+								BorrowStatus = dataReader.GetInt32("borrow_status")
 							});
 						}
 					}
@@ -534,7 +534,41 @@ namespace Library.WebApi.Models
 			}
 			return adminInfo;
 		}
-	}
+		
+		//unpaid penalty
+		public decimal ExecuteUnpaidPenalty(string str)
+		{
+			MySqlConnection con = new MySqlConnection(constr);
+			MySqlDataReader dataReader = null;
+			decimal result = 0;
+			try
+			{
+				con.Open();
+				string sql = "SELECT SUM(reader_unpaid_penalty) AS Total  from reader;";
+				MySqlCommand command = new MySqlCommand(sql, con);
+				dataReader = command.ExecuteReader();
+				if (dataReader != null && dataReader.HasRows)
+				{
+					while (dataReader.Read())
+					{
+						result = (decimal) dataReader.GetDouble("Total");
+					}
+				}
+
+				dataReader.Close();
+			}
+			catch (Exception e)
+			{
+				Console.WriteLine(e.Message);
+			}
+			finally
+			{
+				con.Close();
+			}
+
+			return result;
+		}
+    }
 }
 
 

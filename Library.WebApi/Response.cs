@@ -39,4 +39,12 @@ namespace JWT.MvcDemo.Models
         public string Token { get; set; }
         public List<AdminInfo> AdminList { get; set; }
     }
+
+    public class DashboardResponse
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; }
+        public decimal ReaderUnpaid { get; set; }
+    }
+    
 }

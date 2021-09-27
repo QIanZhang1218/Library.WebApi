@@ -80,16 +80,16 @@ namespace Library.WebApi.Controllers
             Mysql database = new Mysql();
             try
             {
-                // //update reader overdue status from borrow_list table
+                //update reader overdue status from borrow_list table
                 var reader = database.ExecuteGetUserId($"SELECT reader_id FROM library_schema.reader WHERE (`token` = '{userToken}');");
                 int readerId = reader[0].ReaderId;
                 var recordList = database.GetOverdueStatus($"SELECT * FROM library_schema.borrow_list WHERE (`reader_id` = '{readerId}');");
                 Boolean isOverdue = false;
-                if (recordList != null)
+                if (recordList.Count != 0)
                 {
                     for (int i = 0; i < recordList.Count; i++)
                     {
-                        while (recordList[i].OverdueStatus == true)
+                        while (recordList[i].BorrowStatus == 40)
                         {
                             isOverdue = true;
                             break;
@@ -97,19 +97,19 @@ namespace Library.WebApi.Controllers
                     }
                 }
                 // var isSignin = database.ExecuteGetBooksList($"SELECT * FROM library_schema.reader WHERE (`token` = '{userToken}');");
-                if (reader != null && isOverdue == false)
+                if (reader.Count != 0 && isOverdue == false)
                 {
                     var res = database.ExecuteGetBooksList($"SELECT * FROM library_schema.books WHERE (`book_id` = {para.BookId});");
                     database.ExecuteNonQuery(
-                        $"INSERT INTO `library_schema`.`borrow_list` (`reader_id`, `book_id`, `book_name`, `borrow_date`, `return_date`,`penalty`) VALUES ('{readerId}', '{para.BookId}','{res[0].BookName}', '{para.BorrowDate.ToString("yyyy-MM-dd HH:mm:ss")}','{para.BorrowDate.AddDays(7).ToString("yyyyMMddHHmmss")}','{para.Penalty}')");
+                        $"INSERT INTO `library_schema`.`borrow_list` (`reader_id`, `book_id`, `book_name`, `borrow_date`, `return_date`,`reserve_date`,`penalty`) VALUES ('{readerId}', '{para.BookId}','{res[0].BookName}', '{para.BorrowDate.ToString("yyyy-MM-dd")}','{para.BorrowDate.AddDays(7).ToString("yyyyMMdd")}','{para.ReserveDate.ToString("yyyy-MM-dd")}','{para.Penalty}')");
                     database.ExecuteNonQuery(
                         $" UPDATE `library_schema`.`books` SET `book_current_amount` = book_current_amount-1,`book_borrow_times` = book_borrow_times+1 WHERE (`book_id` = {para.BookId});");
                     return new StatusResponse
                         { Success = true, Message = "Record SuccessFully Saved."};
-                }else if(reader != null && isOverdue)
+                }else if(reader.Count !=0 && isOverdue)
                 {
                     return new StatusResponse
-                        { Success = false, Message = "You have overdue books or unpaid fines"};
+                        { Success = false, Message = "Sorry,can't reserve this book.You have overdue books"};
                 }
                 else
                 {
