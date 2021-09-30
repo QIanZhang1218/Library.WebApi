@@ -1,3 +1,4 @@
+using System;
 using System.ComponentModel.DataAnnotations;
 
 
@@ -27,5 +28,13 @@ namespace Library.WebApi
         public string Token { get; set; }
         public string Pwd { get; set; }
     }
-    
+
+    public class UserMessage
+    {
+        public int MessageId { get; set; }
+        public string ReaderName { get; set; }
+        public string ReaderEmail { get; set; }
+        public string ReaderMessage { get; set; }
+        public Boolean MessageStatus { get; set; }
+    }
 }

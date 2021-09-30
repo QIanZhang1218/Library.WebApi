@@ -46,5 +46,5 @@ namespace JWT.MvcDemo.Models
         public string Message { get; set; }
         public decimal ReaderUnpaid { get; set; }
     }
-    
+
 }

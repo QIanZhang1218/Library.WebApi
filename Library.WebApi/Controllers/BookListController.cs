@@ -202,5 +202,56 @@ namespace Library.WebApi.Controllers
             }
             
         }
+        //Complete pay penalty
+        [HttpPost]
+        public object CompletePayFine([FromBody] ReserveBooks para)
+        {
+            Mysql database = new Mysql();
+            try
+            {
+                database.ExecuteNonQuery(
+                    $" UPDATE `library_schema`.`borrow_list` SET `isPaid` = true WHERE (`record_id` = {para.RecordId});");
+                return new StatusResponse
+                    { Success = true, Message = "Pay Successfully."};
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                return new StatusResponse
+                    { Success = false, Message = "Invalid Data." };
+            }
+        }
+        
+        //Save reader message
+        [HttpPost]
+        public Object SaveUserMessage([FromBody] UserMessage para)
+        {
+            Mysql database = new Mysql();
+            try
+            {
+                var res = database.ExecuteNonQueryReturn(
+                    $"INSERT INTO `library_schema`.`reader_message` (`name`, `email`, `message`) VALUES ('{para.ReaderName}','{para.ReaderEmail}', '{para.ReaderMessage}')");
+                if (res == "Success")
+                {
+                    return new AdminStatusResponse
+                        {Success = true, Message = "Submit Successful."};
+                }
+                else if (res == $"Duplicate entry '{para.MessageId}' for key  'reader_message.PRIMARY'")
+                {
+                    return new AdminStatusResponse
+                    {
+                        Success = false, Message = res
+                    };
+                }
+                return new StatusResponse
+                    { Success = true, Message = "Submit Successfully."};
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                return new StatusResponse
+                    { Success = false, Message = "Invalid Data." };
+            }
+        }
     }
 }

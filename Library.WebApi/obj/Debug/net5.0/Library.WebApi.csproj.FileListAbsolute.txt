@@ -44,3 +44,4 @@
 /Users/zhangqian/Desktop/Library.WebApi/Library.WebApi/bin/Debug/net5.0/Newtonsoft.Json.dll
 /Users/zhangqian/Desktop/Library.WebApi/Library.WebApi/bin/Debug/net5.0/System.IdentityModel.Tokens.Jwt.dll
 /Users/zhangqian/Desktop/Library.WebApi/Library.WebApi/bin/Debug/net5.0/System.Web.Mvc.Extensions.dll
+/Users/zhangqian/Desktop/Library.WebApi/Library.WebApi/bin/Debug/net5.0/Stripe.net.dll

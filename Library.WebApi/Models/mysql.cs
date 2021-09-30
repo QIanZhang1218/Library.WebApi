@@ -205,7 +205,7 @@ namespace Library.WebApi.Models
 						    decimal penalty =delay * 5;
 						    penaltySum += penalty;
 						    ExecuteNonQuery(
-						        $"UPDATE `library_schema`.`borrow_list` SET `penalty` = '{penalty}',`borrow_status`= 40 WHERE (`record_id` = {dataReader.GetInt32("record_id")})");
+						        $"UPDATE `library_schema`.`borrow_list` SET `penalty` = '{penalty}' WHERE (`record_id` = {dataReader.GetInt32("record_id")})");
 						}
 					}
 					//Console.WriteLine("!"+penaltySum);
