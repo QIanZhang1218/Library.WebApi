@@ -153,6 +153,8 @@ namespace Library.WebApi.Controllers
             {
                 var resStatue = database.ExecuteGetPenalty(
                     $"SELECT * FROM library_schema.borrow_list WHERE (`reader_id` = '{reader[0].ReaderId}');");
+                database.ExeciteAutoCancel(
+                        $"SELECT * FROM library_schema.borrow_list WHERE (`reader_id` = '{reader[0].ReaderId}');");
                 if (!resStatue)
                 {
                     return new StatusResponse()  {
@@ -201,6 +203,62 @@ namespace Library.WebApi.Controllers
                     { Success = false, Message = "Invalid Data." };
             }
             
+        }
+        
+        //Cancel reservation
+        [HttpPost]
+        public BorrowRecordsResponse CancelReservation([FromBody] ReserveBooks para)
+        {
+            Mysql database = new Mysql();
+            if (para.BorrowStatus != 10)
+            {
+                switch (@para.BorrowStatus)
+                {
+                    case 20:
+                        return new BorrowRecordsResponse
+                        {
+                            Success = false, Message = "You have already picked the book."
+                        };
+                    case 30:
+                        return new BorrowRecordsResponse
+                        {
+                            Success = false, Message = "You have already returned book."
+                        };
+                    case 40:
+                        return new BorrowRecordsResponse
+                        {
+                            Success = false, Message = "Please pay the overdue fine."
+                        };
+                    case 99:
+                        return new BorrowRecordsResponse
+                        {
+                            Success = false, Message = "The reservation has already been cancelled."
+                        };
+                    default:
+                        return new BorrowRecordsResponse
+                        {
+                            Success = false, Message = "Failed."
+                        };
+                }
+            }
+
+            try
+            {
+                var res = database.ExecuteNonQueryReturn(
+                    $"UPDATE `library_schema`.`borrow_list` SET `borrow_status` = 99 WHERE (`record_id` = '{para.RecordId}')");
+                if (res == "Success")
+                {
+                    return new BorrowRecordsResponse
+                        {Success = true, Message = "Reservation Cancelled."};
+                }
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+                throw;
+            }
+            return new BorrowRecordsResponse
+                {Success = true, Message = "Failed."};
         }
         //Complete pay penalty
         [HttpPost]

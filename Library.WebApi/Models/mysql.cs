@@ -169,7 +169,48 @@ namespace Library.WebApi.Models
 			}
 			return signInInfo;
 		}
-		
+		//Auto cancel reservation for books which have been reserved but not pick up on time
+		public void ExeciteAutoCancel(string str)
+		{
+			MySqlConnection con = new MySqlConnection(constr);
+			MySqlDataReader dataReader = null;
+			try
+			{
+				con.Open();
+				string sql = str;
+				MySqlCommand command = new MySqlCommand(sql, con);
+				dataReader = command.ExecuteReader();
+				if (dataReader != null && dataReader.HasRows)
+				{
+					int readerId = 0;
+					while (dataReader.Read())
+					{
+						//get return status 
+						int borrowStatus = dataReader.GetInt32("borrow_status");
+						DateTime currentTime = Convert.ToDateTime(DateTime.Now.ToLongDateString().ToString());
+						DateTime borroeTime = dataReader.GetDateTime("borrow_date");
+						int autoCancel = DateTime.Compare(currentTime, borroeTime);
+						//readers who hace alreay make a reservation but unpick up on the borrow date then will auto cancel the reservation on the next day of borrow date
+						if (borrowStatus == 10 && autoCancel == 1)
+						{
+							ExecuteNonQuery(
+								$"UPDATE `library_schema`.`borrow_list` SET `borrow_status` = 99 WHERE (`record_id` = {dataReader.GetInt32("record_id")})");
+						}
+					}
+				}
+
+				dataReader.Close();
+			}
+			catch (Exception e)
+			{
+				Console.WriteLine(e.Message);
+			}
+			finally
+			{
+				con.Close();
+			}
+		}
+
 		//Get  Borrow Records
 		public Boolean ExecuteGetPenalty(string str)
 		{
@@ -274,7 +315,7 @@ namespace Library.WebApi.Models
 			}
 			return borrowRecords;
 		}
-		
+
 		//Administrator Login
 		public List<AdminLogIn> VerifyAdmin(string str)
 		{
@@ -345,12 +386,6 @@ namespace Library.WebApi.Models
 						readersInfo.Add(new ManageReader()
 						{
 							ReaderId = dataReader.GetInt32("reader_id"),
-							// ReaderName = dataReader.GetString("reader_name"),
-							// ReaderEmail = dataReader.GetString("reader_email"),
-							// ReaderUnpaid = dataReader.GetInt32("reader_unpaid_penalty"),
-							// ReaderOnhold = dataReader.GetInt32("reader_borrow_numbers"),
-							// ReaderRemark = dataReader.IsDBNull("reader_remark") ? null : dataReader.GetString("reader_remark"),
-							// Token = dataReader.IsDBNull("token") ? null : dataReader.GetString("token"),
 						});
 					}
 				}
@@ -544,7 +579,7 @@ namespace Library.WebApi.Models
 			try
 			{
 				con.Open();
-				string sql = "SELECT SUM(reader_unpaid_penalty) AS Total  from reader;";
+				string sql = str;
 				MySqlCommand command = new MySqlCommand(sql, con);
 				dataReader = command.ExecuteReader();
 				if (dataReader != null && dataReader.HasRows)
