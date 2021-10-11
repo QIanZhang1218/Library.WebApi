@@ -35,6 +35,6 @@ namespace Library.WebApi
         public string ReaderName { get; set; }
         public string ReaderEmail { get; set; }
         public string ReaderMessage { get; set; }
-        public Boolean MessageStatus { get; set; }
+        public string  MessageStatus { get; set; }
     }
 }

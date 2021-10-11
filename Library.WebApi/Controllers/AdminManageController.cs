@@ -504,6 +504,71 @@ namespace Library.WebApi.Controllers
             };
         }
         
+        //Add new borrow records
+        [HttpPost]
+        public object AddNewReservation([FromBody] ReserveBooks para)
+        {
+            string adminToken = Request.Cookies["token"];
+            Mysql database = new Mysql();
+            try
+            {
+                var reserveBook = database.ExecuteGetBorrowRecords($"SELECT * FROM library_schema.borrow_list WHERE (`reader_id` = '{para.UserId}' AND `book_id` = {para.BookId} AND borrow_status IN ('10','20','40') );");
+                if (reserveBook != null)
+                {
+                    return new StatusResponse
+                        {Success = false, Message = "Sorry. You have already reserve this book."};
+                }
+                var recordList = database.GetOverdueStatus($"SELECT * FROM library_schema.borrow_list WHERE (`reader_id` = '{para.UserId}');");
+                    Boolean isOverdue = false;
+                    DateTime currentTime =DateTime.Now;
+                    
+                    if (recordList.Count != 0)
+                    {
+                        for (int i = 0; i < recordList.Count; i++)
+                        {
+                            Console.WriteLine(recordList);
+                            DateTime returnTime = recordList[i].ReturnDate;
+                            int result = DateTime.Compare(currentTime, returnTime);
+                            Console.WriteLine(result);
+                            while (recordList[i].BorrowStatus == 20 && result == 1)
+                            {
+                                isOverdue = true;
+                                break;
+                            }
+                        }
+                    }
+                    if (isOverdue == false)
+                    {
+                        var res = database.ExecuteGetBooksList($"SELECT * FROM library_schema.books WHERE (`book_id` = {para.BookId});");
+                        database.ExecuteNonQuery(
+                            $"INSERT INTO `library_schema`.`borrow_list` (`reader_id`, `book_id`, `book_name`, `borrow_date`, `return_date`,`reserve_date`,`penalty`) VALUES ('{para.UserId}', '{para.BookId}','{res[0].BookName}', '{para.BorrowDate.ToString("yyyy-MM-dd")}','{para.BorrowDate.AddDays(7).ToString("yyyyMMdd")}','{para.ReserveDate.ToString("yyyy-MM-dd")}','{para.Penalty}')");
+                        database.ExecuteNonQuery(
+                            $" UPDATE `library_schema`.`books` SET `book_current_amount` = book_current_amount-1,`book_borrow_times` = book_borrow_times+1 WHERE (`book_id` = {para.BookId});");
+                        return new StatusResponse
+                            { Success = true, Message = "Record SuccessFully Saved."};
+                    }else if(isOverdue)
+                    {
+                        return new StatusResponse
+                            { Success = false, Message = "Sorry,can't reserve this book.You have overdue books"};
+                    }
+                    else
+                    {
+                        return new StatusResponse
+                            { Success = false, Message = "Have not sign in."};
+                    }
+                    
+                //update reader overdue status from borrow_list table
+               
+            }
+            catch (Exception e)
+            {
+                Console.WriteLine(e);
+               return new StatusResponse
+                    { Success = false, Message = "Have not sign in." };
+            }
+           
+        }
+        
         //Cancel reservation
         [HttpPost]
         public BorrowRecordsResponse CancelReservation([FromBody] ReserveBooks para)
@@ -634,6 +699,167 @@ namespace Library.WebApi.Controllers
                 BookPublishDate = res[index-1].BookPublishDate,
                 BookLanguage = res[index-1].BookLanguage,
             }).ToArray();
+        }
+        
+        //Unpaid penalty details
+        [HttpGet]
+        public StatusResponse GetUnpaidPenaltyDetails()
+        {
+            string adminToken = Request.Cookies["token"];
+            Mysql database = new Mysql();
+            var admin = database.GetAdminId($"SELECT * FROM library_schema.admin WHERE (`token` = '{adminToken}');");
+            var res = database.ExecuteGetBorrowRecords($"SELECT * FROM library_schema.borrow_list WHERE (`penalty` > 0  AND `isPaid` =false);");
+            if (admin == null)
+            {
+                return new StatusResponse
+                {
+                    Success = false,
+                    Message = "Please Log In first.",
+                };
+            }
+            if (res == null)
+            {
+                return new StatusResponse
+                {
+                    Success = true,
+                    Message = "No records",
+                };
+            }
+            else
+            {
+                return new StatusResponse
+                {
+                    Success = true,
+                    Message = "Get Records",
+                    BookList = res,
+                };
+            }
+        }
+        
+        //User Message
+        [HttpGet]
+        public GetUserMessageResponse GetUserMessage()
+        {
+            string adminToken = Request.Cookies["token"];
+            Mysql database = new Mysql();
+            var admin = database.GetAdminId($"SELECT * FROM library_schema.admin WHERE (`token` = '{adminToken}');");
+            var res = database.GetUserMessage($"SELECT * FROM library_schema.reader_message;");
+            if (res != null)
+            {
+                if (admin != null)
+                {
+
+                    return new GetUserMessageResponse
+                    {
+                        Success = true,
+                        Message = "Get User Message",
+                        UserMessage = res,
+                    };
+                }
+                else
+                {
+                    return new GetUserMessageResponse
+                        {Success = false, Message = "Have not sign in."};
+                }
+            }
+            else
+            {
+                if (admin != null)
+                {
+
+                    return new GetUserMessageResponse
+                    {
+                        Success = true,
+                        Message = "No records",
+                    };
+                }
+                else
+                {
+                    return new GetUserMessageResponse
+                        {Success = false, Message = "Have not sign in."};
+                }
+            }
+        }
+        //Processing user message
+        [HttpPost]
+        public object ProcessingUserMessage([FromBody] UserMessage para)
+        {
+            Mysql database = new Mysql();
+            string adminToken = Request.Cookies["token"];
+            var userMessageList = database.GetUserMessage($"SELECT * FROM library_schema.reader_message;");
+            if (userMessageList == null)
+            {
+                return new GetUserMessageResponse
+                {
+                    Success = false, Message = "No records"
+                };
+            }
+
+            var admin = database.GetAdminId($"SELECT * FROM library_schema.admin WHERE (`token` = '{adminToken}');");
+            if (admin != null)
+            {
+                try
+                {
+                    var res = database.ExecuteNonQueryReturn(
+                        $" UPDATE `library_schema`.`reader_message` SET `status` = '20' WHERE (`id` = '{para.MessageId}');");
+                    if (res == "Success")
+                    {
+                        return new AdminStatusResponse
+                            {Success = true, Message = "Processing."};
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
+            }
+
+            return new GetAdminInfoResponse
+            {
+                Success = false, Message = "Have not log in."
+            };
+        }
+        
+        //Finish user message process
+        [HttpPost]
+        public object FinishUserMessage([FromBody] UserMessage para)
+        {
+            Mysql database = new Mysql();
+            string adminToken = Request.Cookies["token"];
+            var userMessageList = database.GetUserMessage($"SELECT * FROM library_schema.reader_message;");
+            if (userMessageList == null)
+            {
+                return new GetUserMessageResponse
+                {
+                    Success = false, Message = "No records"
+                };
+            }
+
+            var admin = database.GetAdminId($"SELECT * FROM library_schema.admin WHERE (`token` = '{adminToken}');");
+            if (admin != null)
+            {
+                try
+                {
+                    var res = database.ExecuteNonQueryReturn(
+                        $" UPDATE `library_schema`.`reader_message` SET `status` = '30' WHERE (`id` = '{para.MessageId}');");
+                    if (res == "Success")
+                    {
+                        return new AdminStatusResponse
+                            {Success = true, Message = "Finish Processing."};
+                    }
+                }
+                catch (Exception e)
+                {
+                    Console.WriteLine(e);
+                    throw;
+                }
+            }
+
+            return new GetAdminInfoResponse
+            {
+                Success = false, Message = "Have not log in."
+            };
         }
 
     }

@@ -427,7 +427,9 @@ namespace Library.WebApi.Models
 							borrowListInfo.Add(new ReserveBooks()
 							{
 								UserId = dataReader.GetInt32("reader_id"),
-								BorrowStatus = dataReader.GetInt32("borrow_status")
+								BorrowStatus = dataReader.GetInt32("borrow_status"),
+								ReturnDate = dataReader.GetDateTime("return_date"),
+								PenaltyStatus = dataReader.GetBoolean("isPaid")
 							});
 						}
 					}
@@ -466,11 +468,6 @@ namespace Library.WebApi.Models
 						adminInfo.Add(new AdminInfo()
 						{
 							AdminId = dataReader.GetInt32("admin_id"),
-							// AdminName = dataReader.GetString("admin_name"),
-							// AdminEmail = dataReader.GetString("admin-email"),
-							// AdminGender = dataReader.GetString("admin_gender"),
-							// AdminToken = dataReader.GetString("token"),
-							// AdminRemark = dataReader.IsDBNull("admin_remark") ? null : dataReader.GetString("admin_remark")
 						});
 					}
 				}
@@ -607,6 +604,48 @@ namespace Library.WebApi.Models
 			}
 
 			return result;
+		}
+		
+		//user message
+		public List<UserMessage> GetUserMessage(string str)
+		{
+			MySqlConnection con = new MySqlConnection(constr);
+			MySqlDataReader dataReader = null;
+			//return value
+			List<UserMessage> readersInfo = null;
+			try
+			{
+				con.Open();
+				string sql = str;
+				MySqlCommand command = new MySqlCommand(sql, con);
+				dataReader = command.ExecuteReader();
+				if (dataReader != null && dataReader.HasRows)
+				{
+					readersInfo = new List<UserMessage>();
+					while (dataReader.Read())
+					{
+						readersInfo.Add(new UserMessage()
+						{
+							MessageId = dataReader.GetInt32("id"),
+							ReaderName = dataReader.GetString("name"),
+							ReaderEmail = dataReader.GetString("email"),
+							ReaderMessage = dataReader.GetString("message"),
+							MessageStatus = dataReader.GetString("status")
+						});
+					}
+				}
+
+				dataReader.Close();
+			}
+			catch (Exception e)	
+			{
+				Console.WriteLine(e.Message);
+			}
+			finally
+			{
+				con.Close();
+			}
+			return readersInfo;
 		}
     }
 }

@@ -37,9 +37,10 @@ namespace Library.WebApi
 			        penaltySum += penalty;
 			        database.ExecuteNonQuery(
 				        $"UPDATE `library_schema`.`borrow_list` SET `penalty` = '{penalty}' WHERE (`record_id` = '{record.RecordId}')");
+			        database.ExecuteNonQuery(
+				        $"UPDATE `library_schema`.`reader` SET `reader_unpaid_penalty` = {penaltySum} WHERE (`reader_id` = {record.UserId})");
 		        }
-		        database.ExecuteNonQuery(
-			        $"UPDATE `library_schema`.`reader` SET `reader_unpaid_penalty` = {penaltySum} WHERE (`reader_id` = {record.UserId})");
+		       
 	        }
 	      
         }

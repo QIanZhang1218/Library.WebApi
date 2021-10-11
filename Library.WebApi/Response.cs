@@ -46,5 +46,12 @@ namespace JWT.MvcDemo.Models
         public string Message { get; set; }
         public decimal ReaderUnpaid { get; set; }
     }
+    
+    public class GetUserMessageResponse
+    {
+        public bool Success { get; set; }
+        public string Message { get; set; }
+        public List<UserMessage> UserMessage { get; set; }
+    }
 
 }

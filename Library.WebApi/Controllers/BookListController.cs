@@ -80,6 +80,7 @@ namespace Library.WebApi.Controllers
             Mysql database = new Mysql();
             try
             {
+                
                 var reader = database.ExecuteGetUserId($"SELECT reader_id FROM library_schema.reader WHERE (`token` = '{userToken}');");
                 int readerId = reader[0].ReaderId;
                 var reserveBook = database.ExecuteGetBorrowRecords($"SELECT * FROM library_schema.borrow_list WHERE (`reader_id` = '{readerId}' AND `book_id` = {para.BookId} AND borrow_status IN ('10','20','40') );");
@@ -94,7 +95,7 @@ namespace Library.WebApi.Controllers
                     {
                         for (int i = 0; i < recordList.Count; i++)
                         {
-                            while (recordList[i].BorrowStatus == 40)
+                            while (recordList[i].Penalty == 40)
                             {
                                 isOverdue = true;
                                 break;
