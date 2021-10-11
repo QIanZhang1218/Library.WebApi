@@ -25,6 +25,7 @@ namespace Library.WebApi
         public Boolean PenaltyStatus { get; set; }
         
         public DateTime ReserveDate { get; set;  }
+        public DateTime ActualReturnDate { get; set;  }
     }
 
     public class BorrowRecordsResponse

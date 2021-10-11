@@ -467,6 +467,7 @@ namespace Library.WebApi.Controllers
             string adminToken = Request.Cookies["token"];
             Mysql database = new Mysql();
             var admin = database.GetAdminId($"SELECT * FROM library_schema.admin WHERE (`token` = '{adminToken}');");
+            var currentTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss");   
             if (admin != null)
             {
                 try
@@ -474,7 +475,7 @@ namespace Library.WebApi.Controllers
                     if (para.Penalty > 0 && para.PenaltyStatus == false)
                     {
                         var res = database.ExecuteNonQueryReturn(
-                            $"UPDATE `library_schema`.`borrow_list` SET `borrow_status` = 40 WHERE (`record_id` = '{para.RecordId}')");
+                            $"UPDATE `library_schema`.`borrow_list` SET `borrow_status` = 30, `actual_return_date` = '{currentTime}' WHERE (`record_id` = '{para.RecordId}')");
                         if (res == "Success")
                         {
                             return new BorrowRecordsResponse
@@ -483,7 +484,7 @@ namespace Library.WebApi.Controllers
                     }else if (para.Penalty == 0 || para.PenaltyStatus)
                     {
                         var res = database.ExecuteNonQueryReturn(
-                            $"UPDATE `library_schema`.`borrow_list` SET `borrow_status` = 30 WHERE (`record_id` = '{para.RecordId}')");
+                            $"UPDATE `library_schema`.`borrow_list` SET `borrow_status` = 30, `actual_return_date` = '{currentTime}' WHERE (`record_id` = '{para.RecordId}')");
                         if (res == "Success")
                         {
                             return new BorrowRecordsResponse

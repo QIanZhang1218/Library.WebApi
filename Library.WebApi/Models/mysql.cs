@@ -239,7 +239,7 @@ namespace Library.WebApi.Models
 						DateTime returnTime = dataReader.GetDateTime("return_date");
 						int result = DateTime.Compare(currentTime, returnTime);
 						// readers who has pick up their reservation and overdue and the penalty is unpaid then will add penalty amount day by day.
-						if ((borrowStatus == 20 || borrowStatus ==40) && result==1 && isPaid == false)
+						if ((borrowStatus == 20 ) && result==1 && isPaid == false)
 						{
 						    int delay = Convert.ToInt32(currentTime .Subtract(returnTime).Days.ToString());
 						    //Penalty: $5 each day
@@ -247,11 +247,12 @@ namespace Library.WebApi.Models
 						    penaltySum += penalty;
 						    ExecuteNonQuery(
 						        $"UPDATE `library_schema`.`borrow_list` SET `penalty` = '{penalty}' WHERE (`record_id` = {dataReader.GetInt32("record_id")})");
+						    ExecuteNonQuery(
+							    $"UPDATE `library_schema`.`reader` SET `reader_unpaid_penalty` = {penaltySum} WHERE (`reader_id` = {readerId})");
 						}
 					}
 					//Console.WriteLine("!"+penaltySum);
-					ExecuteNonQuery(
-						$"UPDATE `library_schema`.`reader` SET `reader_unpaid_penalty` = {penaltySum} WHERE (`reader_id` = {readerId})");
+					
 					return true;
 				}
 
@@ -267,6 +268,8 @@ namespace Library.WebApi.Models
 			}
 			return false;
 		}
+		
+		//get unpaid penalty 
 		public List<ReserveBooks> ExecuteGetBorrowRecords(string str)
 		{
 			MySqlConnection con = new MySqlConnection(constr);
@@ -286,6 +289,7 @@ namespace Library.WebApi.Models
 					borrowRecords = new List<ReserveBooks>();
 					while (dataReader.Read())
 					{
+						object actualReturnDate = null;
 						borrowRecords.Add(new ReserveBooks()
 						{
 							RecordId = dataReader.GetInt32("record_id"),
@@ -297,7 +301,8 @@ namespace Library.WebApi.Models
 							Penalty = dataReader.GetDecimal("penalty"),
 							BorrowStatus = dataReader.GetInt32("borrow_status"),
 							PenaltyStatus = dataReader.GetBoolean("isPaid"),
-							ReserveDate = dataReader.GetDateTime("reserve_date")
+							ReserveDate = dataReader.GetDateTime("reserve_date"),
+							ActualReturnDate =dataReader.IsDBNull("actual_return_date") ? Convert.ToDateTime("2020-01-01 00:00:00") :dataReader.GetDateTime("actual_return_date")
 						});
 					}
 					return borrowRecords;

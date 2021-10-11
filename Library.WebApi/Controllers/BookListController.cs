@@ -76,7 +76,7 @@ namespace Library.WebApi.Controllers
         [HttpPost]
         public object ReserveBooks([FromBody] ReserveBooks para)
         {
-            string userToken = Request.Cookies["token"];
+            string userToken = Request.Cookies["user_token"];
             Mysql database = new Mysql();
             try
             {
@@ -139,7 +139,7 @@ namespace Library.WebApi.Controllers
         [HttpGet]
         public StatusResponse GetBorrowRecords()
         {
-            string userToken = Request.Cookies["token"];
+            string userToken = Request.Cookies["user_token"];
             Mysql database = new Mysql();
             var reader = database.ExecuteGetUserId($"SELECT reader_id FROM library_schema.reader WHERE (`token` = '{userToken}');");
             if (reader == null)
@@ -191,6 +191,7 @@ namespace Library.WebApi.Controllers
             Mysql database = new Mysql();
             try
             {
+                
                 database.ExecuteNonQuery(
                         $" UPDATE `library_schema`.`borrow_list` SET `return_date` = date_add(return_date,interval 1 week) WHERE (`record_id` = {para.RecordId});");
                     return new StatusResponse
