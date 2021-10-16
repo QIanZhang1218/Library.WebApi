@@ -18,26 +18,23 @@ namespace Library.WebApi.Controllers
         {
             Console.WriteLine(para);
             Mysql database = new Mysql();
-            var res = database.VerifyAdmin($"SELECT * FROM library_schema.admin WHERE `admin_email`='{para.Email}' AND `admin_pwd`='{para.Pwd}';");
+            var res = database.VerifyAdmin(
+                $"SELECT * FROM library_schema.admin WHERE `admin_email`='{para.Email}' AND `admin_pwd`='{para.Pwd}';");
             if (res.Count == 0)
             {
-                return new AdminStatusResponse { Success = false, Message = "Invalid User."};
+                return new AdminStatusResponse {Success = false, Message = "Invalid User."};
             }
             else
             {
                 var token = res[0].Token;
                 database.ExecuteNonQuery(
                     $" UPDATE `library_schema`.`admin` SET `token` = '{token}' WHERE admin_email='{para.Email}';");
-                return new AdminStatusResponse { Success = true, Message = "Login Successfully",Token = res[0].Token };
+                return new AdminStatusResponse {Success = true, Message = "Login Successfully", Token = res[0].Token};
             }
         }
-    }
-    
-    //Admin sign up
-    [ApiController]
-    [Route("api/[controller]/[action]")]
-    public class AdminSignUpController : ControllerBase
-    {
+        
+           //Admin sign up
+
         [HttpPost]
         public Object PushAdminSignUp([FromBody] AdminSignUp para)
         {
@@ -70,5 +67,56 @@ namespace Library.WebApi.Controllers
                 Success = false,Message = "Failed"
             };
         }
+        
+        //get admin name
+        [HttpGet]
+        public GetAdminInfoResponse GetAdminName()
+        {
+            string adminToken = Request.Cookies["token"];
+            Mysql database = new Mysql();
+            var admin = database.GetAdminId($"SELECT * FROM library_schema.admin WHERE (`token` = '{adminToken}');");
+            var res = database.GetAdminList($"SELECT * FROM library_schema.admin WHERE (`token` = '{adminToken}');");
+            if (res != null)
+            {
+                if (admin != null)
+                {
+
+                    return new GetAdminInfoResponse
+                    {
+                        Success = true,
+                        Message = "",
+                        AdminList = res,
+                    };
+                }
+                else
+                {
+                    return new GetAdminInfoResponse
+                        {Success = false, Message = "Have not sign in."};
+                }
+            }
+            else
+            {
+                if (admin != null)
+                {
+
+                    return new GetAdminInfoResponse
+                    {
+                        Success = true,
+                        Message = "No records",
+                    };
+                }
+                else
+                {
+                    return new GetAdminInfoResponse
+                        {Success = false, Message = "Have not sign in."};
+                }
+            }
+        }
     }
+    
+   
+
+    
 }
+    
+  
